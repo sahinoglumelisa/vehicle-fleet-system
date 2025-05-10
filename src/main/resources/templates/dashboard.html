@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .sidebar .user-info {
+            margin-bottom: 30px;
+        }
+
+        .logout-form {
+            margin-top: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #ecf0f1;
+        }
+
+        .vehicle-card {
+            background-color: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Fleet Manager</h2>
+    <div th:if="${#authentication != null}">
+        <p>Welcome, <span th:text="${#authentication.name}"></span></p>
+    </div>
+    <div th:unless="${#authentication != null}">
+        <p>Please log in</p>
+    </div>
+
+
+    <form th:action="@{/logout}" method="post" class="logout-form">
+        <button type="submit">Logout</button>
+    </form>
+</div>
+
+<div class="main-content">
+    <h1>All Vehicles</h1>
+
+    <div th:each="vehicle : ${vehicles}" class="vehicle-card">
+        <p><strong>Plate:</strong> <span th:text="${vehicle.plateNumber}"></span></p>
+        <p><strong>Brand:</strong> <span th:text="${vehicle.brand}"></span></p>
+        <p><strong>Model:</strong> <span th:text="${vehicle.model}"></span></p>
+        <p><strong>Year:</strong> <span th:text="${vehicle.year}"></span></p>
+    </div>
+</div>
+
+</body>
+</html>
