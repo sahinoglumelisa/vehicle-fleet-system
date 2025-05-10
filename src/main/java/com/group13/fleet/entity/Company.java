@@ -13,23 +13,38 @@ import lombok.Data;
 public class Company {
     @Id
     @Column(name = "company_id")
-    @JsonProperty
     private int id;
 
     @JsonProperty
     @Column(name = "name")
     private String name;
 
-    @JsonProperty
     @Column(name = "address")
     private String address;
 
-    @JsonProperty
     @Column(name = "phone_number")
     private String phoneNumber;
 
-    @JsonProperty
     @Column(name = "tax_number")
     private String taxNumber;
 
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public String getTaxNumber() {
+        return taxNumber;
+    }
 }
