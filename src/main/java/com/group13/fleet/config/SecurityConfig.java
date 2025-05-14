@@ -8,6 +8,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -17,6 +19,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/register", "/css/**", "customer-login-page", "admin-login-page", "user-login-page", "admin-login", "customer-login", "driver-login")
                         .permitAll()
+                        .requestMatchers("/").hasAnyRole("CUSTOMER", "ADMIN","DRIVER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
