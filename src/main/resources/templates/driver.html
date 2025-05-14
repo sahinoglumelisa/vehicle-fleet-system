@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+        }
+        main {
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <form action="/driver/task" method="get">
+        <button type="submit">View Assigned Vehicle and Task</button>
+    </form>
+    <form action="/driver/enter-odometer" method="get">
+        <button type="submit">Enter Odometer Information</button>
+    </form>
+</main>
+</body>
+</html>

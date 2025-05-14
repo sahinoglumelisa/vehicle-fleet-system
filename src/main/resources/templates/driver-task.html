@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Assigned Vehicle and Task</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+        }
+        table {
+            margin: auto;
+            border-collapse: collapse;
+            width: 60%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 0.8rem;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<h1>Your Assigned Vehicle and Task</h1>
+
+<table>
+    <tr>
+        <th>Vehicle</th>
+        <td th:text="${vehicle}">Ford Transit</td>
+    </tr>
+    <tr>
+        <th>Task Description</th>
+        <td th:text="${taskDescription}">Deliver supplies to location X</td>
+    </tr>
+    <tr>
+        <th>Start Time</th>
+        <td th:text="${startTime}">2025-05-13 08:00</td>
+    </tr>
+    <tr>
+        <th>End Time</th>
+        <td th:text="${endTime}">2025-05-13 14:00</td>
+    </tr>
+</table>
+</body>
+</html>

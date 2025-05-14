@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Customer Operations</h1>
+
+<form action="/customer/vehicle-management" method="get">
+    <button type="submit">Vehicle Management</button>
+</form>
+
+<form action="/customer/task-driver-management" method="get">
+    <button type="submit">Task and Driver Management</button>
+</form>
+
+<form action="/customer/report-prediction" method="get">
+    <button type="submit">Reports and Prediction</button>
+</form>
+
+</body>
+</html>

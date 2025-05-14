@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Vehicle Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Vehicle Management</h1>
+
+<form action="/customer/vehicle-management/list" method="get">
+    <button type="submit">List Vehicles</button>
+</form>
+
+<form action="/customer/vehicle-management/rent" method="get">
+    <button type="submit">Rent a Vehicle</button>
+</form>
+
+</body>
+</html>

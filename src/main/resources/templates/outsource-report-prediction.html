@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports and Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Reports and Prediction</h1>
+
+<form action="/outsource/report-prediction/monthly-summary" method="get">
+    <button type="submit">Monthly Expense Summary</button>
+</form>
+
+<form action="/outsource/report-prediction/moving-average" method="get">
+    <button type="submit">Moving Average Forecast</button>
+</form>
+
+</body>
+</html>

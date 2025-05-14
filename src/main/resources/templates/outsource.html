@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Outsource Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<h1>Outsource Operations</h1>
+
+<form action="/outsource/management-vehicles" method="get">
+    <button type="submit">Vehicle Management</button>
+</form>
+
+<form action="/outsource/service-fuel-management" method="get">
+    <button type="submit">Service and Fuel Consumption Management</button>
+</form>
+
+<form action="/outsource/odometer-entry-tracking" method="get">
+    <button type="submit">Odometer Entry and Tracking</button>
+</form>
+
+<form action="/outsource/report-prediction" method="get">
+    <button type="submit">Reports and Prediction</button>
+</form>
+</body>
+</html>

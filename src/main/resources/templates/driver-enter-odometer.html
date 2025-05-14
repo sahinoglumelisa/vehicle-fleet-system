@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Enter Odometer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+        }
+        form {
+            width: 300px;
+            margin: auto;
+        }
+        label, input {
+            display: block;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        button {
+            padding: 0.5rem;
+            width: 100%;
+            font-size: 1rem;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<h1>Enter Odometer Reading</h1>
+
+<form th:action="@{/driver/submit-odometer}" method="post">
+    <label for="vehicleId">Vehicle ID</label>
+    <input type="text" id="vehicleId" name="vehicleId" required>
+
+    <label for="kilometer">Current Kilometer</label>
+    <input type="number" id="kilometer" name="kilometer" required>
+
+    <button type="submit">Submit</button>
+</form>
+
+</body>
+</html>

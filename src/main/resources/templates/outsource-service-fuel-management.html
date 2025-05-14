@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Service and Fuel Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            text-align: center;
+        }
+        button {
+            margin: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Service and Fuel Consumption Management</h1>
+
+<form action="/outsource/service-fuel-management/service-entry" method="get">
+    <button type="submit">Record Service Info</button>
+</form>
+
+<form action="/outsource/service-fuel-management/fuel-tracking" method="get">
+    <button type="submit">Track Fuel Usage</button>
+</form>
+
+</body>
+</html>
