@@ -1,0 +1,167 @@
+-- DROP TABLES AND TYPES
+DROP TABLE IF EXISTS expense_reports, expense_tracker, reports, vehicle_usage, fuel_consumption, services, vehicles,
+drivers, customers, sys_admins, fleet_management_sys, users CASCADE;
+
+DROP TYPE IF EXISTS vehicle_status, ownership_type, vehicle_type, service_type, report_type, expense_type;
+
+-- ENUM TYPES
+CREATE TYPE vehicle_status AS ENUM ('AVAILABLE', 'ASSIGNED', 'IN_SERVICE', 'OUT_OF_ORDER');
+CREATE TYPE ownership_type AS ENUM ('OWNED', 'LEASED');
+CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'TRUCK', 'VAN');
+CREATE TYPE service_type AS ENUM ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE', 'REPAIR');
+CREATE TYPE report_type AS ENUM ('VEHICLE_USAGE', 'FUEL_CONSUMPTION', 'MAINTENANCE_COST', 'INSURANCE_COST', 'REPAIR_COST', 'TOTAL_COST', 'PREDICTION');
+CREATE TYPE expense_type AS ENUM ('FUEL', 'MAINTENANCE', 'INSURANCE', 'REPAIR', 'TOTAL');
+
+-- TABLES
+
+CREATE TABLE sys_admins (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE customers (
+company_id INTEGER PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE drivers (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    license_number VARCHAR(50),
+    license_expiry_date DATE NOT NULL,
+    is_active BOOLEAN NOT NULL
+);
+
+
+CREATE TABLE vehicles (
+    vehicle_id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCE customers(company_id),
+    plate_number VARCHAR(20) NOT NULL UNIQUE,
+    brand VARCHAR(50),
+    model VARCHAR(50),
+    year INTEGER,
+    type vehicle_type,
+    status vehicle_status,
+    ownership_type ownership_type,
+    current_odometer DOUBLE PRECISION,
+    previous_month_odometer DOUBLE PRECISION,
+    driver_id INTEGER REFERENCES drivers(user_id)
+);
+
+
+CREATE TABLE services (
+    service_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(vehicle_id),
+    service_date DATE,
+    service_type service_type,
+    description TEXT,
+    cost DOUBLE PRECISION,
+    is_covered_by_insurance BOOLEAN
+);
+
+CREATE TABLE fuel_consumption (
+    fuel_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(vehicle_id),
+    driver_id INTEGER REFERENCES drivers(user_id),
+    date DATE,
+    liters DOUBLE PRECISION,
+    cost DOUBLE PRECISION,
+    odometer_reading DOUBLE PRECISION
+);
+
+CREATE TABLE vehicle_usage (
+    usage_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER REFERENCES vehicles(vehicle_id),
+    driver_id INTEGER REFERENCES drivers(user_id),
+    start_date DATE,
+    end_date DATE,
+    start_odometer DOUBLE PRECISION,
+    end_odometer DOUBLE PRECISION,
+    purpose TEXT
+);
+
+CREATE TABLE reports (
+    report_id SERIAL PRIMARY KEY,
+    generated_date DATE,
+    type report_type,
+    title VARCHAR(100),
+    data TEXT
+);
+
+CREATE TABLE expense_tracker (
+    tracker_id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES customers(company_id),
+    expense_type expense_type
+);
+
+CREATE TABLE expense_reports (
+    tracker_id INTEGER REFERENCES expense_tracker(tracker_id),
+    report_id INTEGER REFERENCES reports(report_id),
+    PRIMARY KEY (tracker_id, report_id)
+);
+
+-- Sample Data Insertion Block
+
+-- Insert admin
+INSERT INTO sys_admins (username, password, email)
+VALUES ('admin1', 'hashedpassword1', 'admin1@example.com');
+
+-- Insert customer (company)
+INSERT INTO customers (company_id, username, password, email)
+VALUES (1, 'fleet_corp', 'hashedpassword2', 'contact@fleetcorp.com');
+
+-- Insert drivers
+INSERT INTO drivers (username, password, email, license_number, license_expiry_date, is_active)
+VALUES 
+('driver_anna', 'hashedpassword3', 'anna@fleetcorp.com', 'DL123456', '2026-12-31', true),
+('driver_bob', 'hashedpassword4', 'bob@fleetcorp.com', 'DL654321', '2025-08-20', true);
+
+-- Insert vehicles
+INSERT INTO vehicles (company_id, plate_number, brand, model, year, type, status, ownership_type, current_odometer, previous_month_odometer, driver_id)
+VALUES 
+(1, 'ABC123', 'Toyota', 'Corolla', 2020, 'SEDAN', 'ASSIGNED', 'OWNED', 50200, 49000, 1),
+(1, 'XYZ789', 'Ford', 'Transit', 2019, 'VAN', 'IN_SERVICE', 'LEASED', 78200, 77000, 2);
+
+-- Insert services
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(1, '2025-04-10', 'REGULAR_MAINTENANCE', 'Oil change and filter replacement', 120.00, false),
+(2, '2025-04-15', 'TIRE_CHANGE', 'Replaced all four tires', 400.00, true);
+
+-- Insert fuel consumption
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES 
+(1, 1, '2025-04-05', 40.5, 85.00, 49500),
+(2, 2, '2025-04-06', 55.0, 120.00, 77500);
+
+-- Insert vehicle usage
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose)
+VALUES 
+(1, 1, '2025-04-01', '2025-04-05', 49000, 49500, 'Client visits'),
+(2, 2, '2025-04-03', '2025-04-07', 77000, 77500, 'Delivery');
+
+-- Insert reports
+INSERT INTO reports (generated_date, type, title, data)
+VALUES 
+('2025-04-30', 'FUEL_CONSUMPTION', 'Monthly Fuel Report - April', 'Summary of fuel usage for April'),
+('2025-04-30', 'MAINTENANCE_COST', 'Maintenance Summary - April', 'Details of service and maintenance costs');
+
+-- Insert into expense_tracker
+INSERT INTO expense_tracker (company_id, expense_type)
+VALUES 
+(1, 'FUEL'),
+(1, 'MAINTENANCE');
+
+-- Link expense_tracker to reports
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES 
+(1, 1),
+(2, 2);
+
+
