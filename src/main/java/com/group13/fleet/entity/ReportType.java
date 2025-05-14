@@ -1,0 +1,6 @@
+package com.group13.fleet.entity;
+
+public enum ReportType {
+    VEHICLE_USAGE, FUEL_CONSUMPTION, MAINTENANCE_COST,
+    INSURANCE_COST, REPAIR_COST, TOTAL_COST, PREDICTION
+}

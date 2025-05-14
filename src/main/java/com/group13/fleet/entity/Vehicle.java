@@ -6,91 +6,64 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+import lombok.Data;
+import lombok.ToString;
+
+import java.util.List;
+
+@Data
 @Entity
-@Table(name = "vehicle")
-@Getter
-@Setter
+@Table(name = "vehicles")
+@ToString
 public class Vehicle {
-
-
-    @Column(name = "company_id", nullable = false)
-    private Integer companyId; // You can map this as an object if you have a Company entity
-
     @Id
-    @Column(name = "plate_number", nullable = false, unique = true)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "vehicle_id")
+    private Long vehicleId;
+
+    @Column(name = "company_id")
+    private Integer customer;
+
+    @Column(name = "plate_number", unique = true, nullable = false, length = 20)
     private String plateNumber;
 
-    @Column(name = "brand")
+    @Column(name = "brand", length = 50)
     private String brand;
 
-    @Column(name = "model")
+    @Column(name = "model", length = 50)
     private String model;
 
     @Column(name = "year")
     private Integer year;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @Column(name = "type")
     private VehicleType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private VehicleStatus status = VehicleStatus.AVAILABLE;
+    @Column(name = "status")
+    private VehicleStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "ownership_type", nullable = false)
+    @Column(name = "ownership_type")
     private OwnershipType ownershipType;
 
-    @Column(name = "current_odometer", precision = 10, scale = 2)
-    private BigDecimal currentOdometer;
+    @Column(name = "current_odometer")
+    private Double currentOdometer;
 
-    @Column(name = "previous_month_odometer", precision = 10, scale = 2)
-    private BigDecimal previousMonthOdometer;
+    @Column(name = "previous_month_odometer")
+    private Double previousMonthOdometer;
 
-    @Column(name = "is_active")
-    private Boolean isActive = true;
+    @ManyToOne
+    @JoinColumn(name = "driver_id")
+    private Driver driver;
 
-    public Integer getCompanyId() {
-        return companyId;
-    }
+    @OneToMany(mappedBy = "vehicle")
+    private List<Service> services;
 
-    public String getPlateNumber() {
-        return plateNumber;
-    }
+    @OneToMany(mappedBy = "vehicle")
+    private List<FuelConsumption> fuelConsumptions;
 
-    public String getBrand() {
-        return brand;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public Integer getYear() {
-        return year;
-    }
-
-    public VehicleType getType() {
-        return type;
-    }
-
-    public VehicleStatus getStatus() {
-        return status;
-    }
-
-    public OwnershipType getOwnershipType() {
-        return ownershipType;
-    }
-
-    public BigDecimal getCurrentOdometer() {
-        return currentOdometer;
-    }
-
-    public BigDecimal getPreviousMonthOdometer() {
-        return previousMonthOdometer;
-    }
-
-    public Boolean getActive() {
-        return isActive;
-    }
+    @OneToMany(mappedBy = "vehicle")
+    private List<VehicleUsage> vehicleUsages;
 }

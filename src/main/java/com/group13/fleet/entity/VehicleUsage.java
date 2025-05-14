@@ -5,32 +5,38 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import lombok.Data;
+import java.util.Date;
+
+@Data
 @Entity
 @Table(name = "vehicle_usage")
 public class VehicleUsage {
-
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usage_id")
-    @JsonProperty
-    private Long id;
+    private Long usageId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_plate", nullable = false)
-    private Vehicle vehicle;
+    @Column(name = "vehicle_id")
+    private Integer vehicle;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "driver_id", nullable = false)
-    private Driver driver;
+    @Column(name = "driver_id")
+    private Integer driver;
 
-    @JsonProperty
-    @Column(name = "start_date", nullable = false)
-    private LocalDate startDate;
+    @Column(name = "start_date")
+    @Temporal(TemporalType.DATE)
+    private Date startDate;
 
-    @JsonProperty
     @Column(name = "end_date")
-    private LocalDate endDate;
+    @Temporal(TemporalType.DATE)
+    private Date endDate;
 
-    @JsonProperty
     @Column(name = "start_odometer")
-    private BigDecimal startOdometer;
+    private Double startOdometer;
+
+    @Column(name = "end_odometer")
+    private Double endOdometer;
+
+    @Column(name = "purpose")
+    private String purpose;
 }

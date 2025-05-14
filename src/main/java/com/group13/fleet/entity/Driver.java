@@ -8,34 +8,41 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
+import lombok.Data;
+import java.util.Date;
+import java.util.List;
+
+@Data
 @Entity
 @Table(name = "drivers")
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 public class Driver {
-
     @Id
-    @JsonProperty
-    @Column(name = "driver_id")
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
+    private Long userId;
 
-    @JsonProperty
-    @Column(name = "name", nullable = false, length = 100)
-    private String name;
+    @Column(name = "username", unique = true, nullable = false, length = 100)
+    private String username;
 
-    @JsonProperty
-    @Column(name = "license_number", nullable = false, unique = true, length = 50)
+    @Column(name = "password", nullable = false, length = 255)
+    private String password;
+
+    @Column(name = "email", unique = true, nullable = false, length = 100)
+    private String email;
+
+    @Column(name = "license_number", length = 50)
     private String licenseNumber;
 
-    @JsonProperty
-    @Column(name = "license_expiry_date")
-    private LocalDate licenseExpiryDate;
+    @Column(name = "license_expiry_date", nullable = false)
+    @Temporal(TemporalType.DATE)
+    private Date licenseExpiryDate;
 
-    @JsonProperty
-    @Column(name = "is_active")
-    private Boolean isActive = true;
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
 
+    @OneToMany(mappedBy = "driver")
+    private List<FuelConsumption> fuelConsumptions;
+
+    @OneToMany(mappedBy = "driver")
+    private List<VehicleUsage> vehicleUsages;
 }
-

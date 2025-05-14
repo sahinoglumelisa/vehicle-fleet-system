@@ -7,49 +7,34 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 
-@Entity
-@Table(name = "service")
 @Data
+@Entity
+@Table(name = "services")
 public class Service {
-
     @Id
-    @JsonProperty
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "service_id")
-    private Long id;
+    private Long serviceId;
 
-    @JsonProperty
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id", nullable = false)
-    private Vehicle vehicle;
+    @Column(name = "vehicle_id")
+    private Integer vehicle;
 
-    @JsonProperty
-    @Column(name = "service_date", nullable = false)
-    private LocalDate serviceDate;
+    @Column(name = "service_date")
+    @Temporal(TemporalType.DATE)
+    private Date serviceDate;
 
-    @JsonProperty
     @Enumerated(EnumType.STRING)
-    @Column(name = "service_type", nullable = false)
+    @Column(name = "service_type")
     private ServiceType serviceType;
 
-    @JsonProperty
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "description")
     private String description;
 
-    @JsonProperty
     @Column(name = "cost")
-    private BigDecimal cost;
+    private Double cost;
 
-    @JsonProperty
-    @Column(name = "is_covered_by_insurance", nullable = false)
-    private Boolean isCoveredByInsurance = false;
-
-    @JsonProperty
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "data_entered_by")
-    private User dataEnteredBy;
-
-    @JsonProperty
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "is_covered_by_insurance")
+    private Boolean isCoveredByInsurance;
 }

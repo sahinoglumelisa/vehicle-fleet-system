@@ -5,25 +5,30 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import lombok.Data;
+import java.util.List;
+
+@Data
 @Entity
 @Table(name = "expense_tracker")
-@Getter
-@Setter
 public class ExpenseTracker {
-
     @Id
-    @JsonProperty
-    @Column(name = "id")
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "tracker_id")
+    private Long trackerId;
 
-    @JsonProperty
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @Column(name = "company_id")
+    private Integer customer;
 
-    @JsonProperty
     @Enumerated(EnumType.STRING)
-    @Column(name = "expense_type", nullable = false)
+    @Column(name = "expense_type")
     private ExpenseType expenseType;
 
+    @ManyToMany
+    @JoinTable(
+            name = "expense_reports",
+            joinColumns = @JoinColumn(name = "tracker_id"),
+            inverseJoinColumns = @JoinColumn(name = "report_id")
+    )
+    private List<Report> reports;
 }
