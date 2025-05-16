@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Assigned Duty and Car</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .sidebar .user-info {
+            margin-bottom: 30px;
+        }
+
+        .sidebar a,
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #34495e;
+            color: white;
+            text-align: left;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover,
+        .sidebar button:hover {
+            background-color: #3d566e;
+        }
+
+        .logout-container {
+            margin-top: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #ecf0f1;
+        }
+
+        .vehicle-card {
+            background-color: white;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Driver Menu</h2>
+
+    <div th:if="${#authentication != null}" class="user-info">
+        <p>Welcome, <span th:text="${#authentication.name}"></span></p>
+    </div>
+
+    <a th:href="@{/driver/dashboard/duty-and-car}">Show Assigned Duty and Car</a>
+    <a th:href="@{/enter-km}">Enter-Km</a>
+
+    <a th:href="@{/driver/dashboard}" style="
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #3498db;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    ">← Back to Dashboard</a>
+
+
+    <div class="logout-container">
+        <form th:action="@{/logout}" method="post" class="logout-form">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content">
+    <h1 class="section-title">Assigned Vehicle and Duty</h1>
+
+    <div th:if="${hasVehicle}" class="vehicle-card">
+        <h3>Assigned Vehicle</h3>
+        <p><strong>Plate:</strong> <span th:text="${vehicle.plateNumber}"></span></p>
+        <p><strong>Brand:</strong> <span th:text="${vehicle.brand}"></span></p>
+        <p><strong>Model:</strong> <span th:text="${vehicle.model}"></span></p>
+        <p><strong>Year:</strong> <span th:text="${vehicle.year}"></span></p>
+    </div>
+    <div th:unless="${hasVehicle}">
+        <p>No vehicle is currently assigned.</p>
+    </div>
+
+    <div th:if="${hasDuty}" class="vehicle-card">
+        <h3>Current Duty</h3>
+        <p><strong>Purpose:</strong> <span th:text="${duty}"></span></p>
+        <p><strong>Start Date:</strong> <span th:text="${dutyStartDate}"></span></p>
+        <p><strong>End Date:</strong> <span th:text="${dutyEndDate}"></span></p>
+        <p><strong>Days Remaining:</strong> <span th:text="${dutyDaysLeft}"></span></p>
+    </div>
+
+    <div th:unless="${hasDuty}">
+        <p>No duty is currently assigned.</p>
+    </div>
+</div>
+
+</body>
+</html>

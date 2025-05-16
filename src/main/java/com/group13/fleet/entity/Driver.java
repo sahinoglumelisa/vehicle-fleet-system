@@ -19,7 +19,7 @@ public class Driver {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long userId;
+    private Integer userId;
 
     @Column(name = "username", unique = true, nullable = false, length = 100)
     private String username;
@@ -35,7 +35,7 @@ public class Driver {
 
     @Column(name = "license_expiry_date", nullable = false)
     @Temporal(TemporalType.DATE)
-    private Date licenseExpiryDate;
+    private LocalDate licenseExpiryDate;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
@@ -46,7 +46,7 @@ public class Driver {
     @OneToMany(mappedBy = "driver")
     private List<VehicleUsage> vehicleUsages;
 
-    public Long getUserId() {
+    public Integer getUserId() {
         return userId;
     }
 
@@ -66,7 +66,7 @@ public class Driver {
         return licenseNumber;
     }
 
-    public Date getLicenseExpiryDate() {
+    public LocalDate getLicenseExpiryDate() {
         return licenseExpiryDate;
     }
 

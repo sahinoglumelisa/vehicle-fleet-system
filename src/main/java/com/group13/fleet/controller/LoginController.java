@@ -148,7 +148,7 @@ public class LoginController {
             );
 
             // Redirect to driver dashboard
-            return "redirect:/dashboard";
+            return "redirect:/driver/dashboard";
         } else {
             // Authentication failed
             redirectAttributes.addFlashAttribute("error", "Invalid email or password");

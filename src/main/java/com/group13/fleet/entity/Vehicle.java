@@ -54,9 +54,8 @@ public class Vehicle {
     @Column(name = "previous_month_odometer")
     private Double previousMonthOdometer;
 
-    @ManyToOne
-    @JoinColumn(name = "driver_id")
-    private Driver driver;
+    @Column(name = "driver_id")
+    private Integer driver;
 
     @OneToMany(mappedBy = "vehicle")
     private List<Service> services;
@@ -111,7 +110,7 @@ public class Vehicle {
         return previousMonthOdometer;
     }
 
-    public Driver getDriver() {
+    public Integer getDriver() {
         return driver;
     }
 
@@ -171,7 +170,7 @@ public class Vehicle {
         this.previousMonthOdometer = previousMonthOdometer;
     }
 
-    public void setDriver(Driver driver) {
+    public void setDriver(Integer driver) {
         this.driver = driver;
     }
 

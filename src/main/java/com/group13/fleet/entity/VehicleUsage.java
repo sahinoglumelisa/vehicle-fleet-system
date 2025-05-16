@@ -25,11 +25,11 @@ public class VehicleUsage {
 
     @Column(name = "start_date")
     @Temporal(TemporalType.DATE)
-    private Date startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
     @Temporal(TemporalType.DATE)
-    private Date endDate;
+    private LocalDate endDate;
 
     @Column(name = "start_odometer")
     private Double startOdometer;
@@ -39,4 +39,8 @@ public class VehicleUsage {
 
     @Column(name = "purpose")
     private String purpose;
+
+    public Double getDrivenKm() {
+        return this.endOdometer - this.startOdometer;
+    }
 }
