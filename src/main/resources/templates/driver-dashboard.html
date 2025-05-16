@@ -110,7 +110,10 @@
 </div>
 
 <div class="main-content">
-    <h1>Driver Dashboard</h1>
+    <div class="flex-box">
+        <h1>Driver Dashboard</h1>
+        <h3 th:text="${companyName}"></h3>
+    </div>
 
     <div class="stat-box">
         <p><strong>License Expiry Date:</strong> <span th:text="${licenseExpiryDate}"></span></p>

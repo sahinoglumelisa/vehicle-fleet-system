@@ -21,6 +21,9 @@ public class Driver {
     @Column(name = "user_id")
     private Integer userId;
 
+    @Column(name = "company_id")
+    private Integer companyId;
+
     @Column(name = "username", unique = true, nullable = false, length = 100)
     private String username;
 

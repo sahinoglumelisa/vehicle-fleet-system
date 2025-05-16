@@ -3,6 +3,7 @@ package com.group13.fleet.controller;
 import com.group13.fleet.entity.Driver;
 import com.group13.fleet.entity.Vehicle;
 import com.group13.fleet.entity.VehicleUsage;
+import com.group13.fleet.repository.CustomerRepository;
 import com.group13.fleet.repository.DriverRepository;
 import com.group13.fleet.repository.VehicleRepository;
 import com.group13.fleet.repository.VehicleUsageRepository;
@@ -32,6 +33,8 @@ public class DashboardController {
     private DriverRepository driverRepository;
     @Autowired
     private VehicleUsageRepository vehicleUsageRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
 
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
@@ -95,8 +98,8 @@ public class DashboardController {
         System.out.println("DAYS PER MONTH: " + daysPerMonth);
         System.out.println("KM PER MONTH: " + kmPerMonth);
 
-
-
+        String companyName = customerRepository.findById(driver.get().getCompanyId()).get().getUsername().toUpperCase();
+        model.addAttribute("companyName", companyName);
         model.addAttribute("daysPerMonth", daysPerMonth);
         model.addAttribute("kmPerMonth", kmPerMonth);
 
@@ -139,6 +142,9 @@ public class DashboardController {
                 daysLeft = ChronoUnit.DAYS.between(today, endDate) + 1;
             }
         }
+
+        String companyName = customerRepository.findById(driver.getCompanyId()).get().getUsername().toUpperCase();
+        model.addAttribute("companyName", companyName);
 
         model.addAttribute("hasVehicle", hasVehicle);
         model.addAttribute("hasDuty", hasDuty);

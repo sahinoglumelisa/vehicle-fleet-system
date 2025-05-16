@@ -103,6 +103,11 @@
 <div class="main-content">
     <h1 class="section-title">Assigned Vehicle and Duty</h1>
 
+        <div class="flex-box">
+
+            <h3 th:text="${companyName}"></h3>
+        </div>
+
     <div th:if="${hasVehicle}" class="vehicle-card">
         <h3>Assigned Vehicle</h3>
         <p><strong>Plate:</strong> <span th:text="${vehicle.plateNumber}"></span></p>
