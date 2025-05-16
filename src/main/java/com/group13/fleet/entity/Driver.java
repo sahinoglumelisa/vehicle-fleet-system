@@ -45,4 +45,40 @@ public class Driver {
 
     @OneToMany(mappedBy = "driver")
     private List<VehicleUsage> vehicleUsages;
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getLicenseNumber() {
+        return licenseNumber;
+    }
+
+    public Date getLicenseExpiryDate() {
+        return licenseExpiryDate;
+    }
+
+    public Boolean getActive() {
+        return isActive;
+    }
+
+    public List<FuelConsumption> getFuelConsumptions() {
+        return fuelConsumptions;
+    }
+
+    public List<VehicleUsage> getVehicleUsages() {
+        return vehicleUsages;
+    }
 }

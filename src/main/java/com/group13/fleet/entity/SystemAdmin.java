@@ -21,4 +21,20 @@ public class SystemAdmin {
 
     @Column(name = "email", unique = true, nullable = false, length = 100)
     private String email;
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
 }

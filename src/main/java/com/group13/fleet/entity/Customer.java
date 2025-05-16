@@ -2,6 +2,7 @@ package com.group13.fleet.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 import lombok.ToString;
 
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
 @Entity
 @Table(name = "customers")
 @ToString
+@Getter
 public class Customer {
     @Id
     @Column(name = "company_id")
@@ -29,4 +31,28 @@ public class Customer {
 
     @OneToMany(mappedBy = "customer")
     private List<ExpenseTracker> expenseTrackers;
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public List<Vehicle> getVehicles() {
+        return vehicles;
+    }
+
+    public List<ExpenseTracker> getExpenseTrackers() {
+        return expenseTrackers;
+    }
 }

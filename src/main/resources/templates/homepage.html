@@ -96,7 +96,7 @@
         <button class="slider-button arrow-button right" onclick="scrollSlider(1)">&#8594;</button>
     </div>
     <hr/>
-    <div class="container mt-5" th:if="${companyVehicles != null and !companyVehicles.isEmpty()}">
+    <div class="container mt-5" th:if="${myVehicles != null and !myVehicles.isEmpty()}">
         <h1 class="fw-bold border-bottom pb-2">Your Company Stats</h1>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="fw-semibold">Your Active Fleet</h3>
@@ -117,7 +117,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="vehicle : ${companyVehicles}">
+                <tr th:each="vehicle : ${myVehicles}">
                     <td th:text="${vehicle.brand}"></td>
                     <td th:text="${vehicle.model}"></td>
                     <td th:text="${vehicle.year}"></td>

@@ -19,7 +19,7 @@ public class Vehicle {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vehicle_id")
-    private Long vehicleId;
+    private Integer vehicleId;
 
     @Column(name = "company_id")
     private Integer customer;
@@ -66,4 +66,124 @@ public class Vehicle {
 
     @OneToMany(mappedBy = "vehicle")
     private List<VehicleUsage> vehicleUsages;
+
+    public Integer getVehicleId() {
+        return vehicleId;
+    }
+
+    public Integer getCustomer() {
+        return customer;
+    }
+
+    public String getPlateNumber() {
+        return plateNumber;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public VehicleType getType() {
+        return type;
+    }
+
+    public VehicleStatus getStatus() {
+        return status;
+    }
+
+    public OwnershipType getOwnershipType() {
+        return ownershipType;
+    }
+
+    public Double getCurrentOdometer() {
+        return currentOdometer;
+    }
+
+    public Double getPreviousMonthOdometer() {
+        return previousMonthOdometer;
+    }
+
+    public Driver getDriver() {
+        return driver;
+    }
+
+    public List<Service> getServices() {
+        return services;
+    }
+
+    public List<FuelConsumption> getFuelConsumptions() {
+        return fuelConsumptions;
+    }
+
+    public List<VehicleUsage> getVehicleUsages() {
+        return vehicleUsages;
+    }
+
+    public void setVehicleId(Integer vehicleId) {
+        this.vehicleId = vehicleId;
+    }
+
+    public void setCustomer(Integer customer) {
+        this.customer = customer;
+    }
+
+    public void setPlateNumber(String plateNumber) {
+        this.plateNumber = plateNumber;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public void setType(VehicleType type) {
+        this.type = type;
+    }
+
+    public void setStatus(VehicleStatus status) {
+        this.status = status;
+    }
+
+    public void setOwnershipType(OwnershipType ownershipType) {
+        this.ownershipType = ownershipType;
+    }
+
+    public void setCurrentOdometer(Double currentOdometer) {
+        this.currentOdometer = currentOdometer;
+    }
+
+    public void setPreviousMonthOdometer(Double previousMonthOdometer) {
+        this.previousMonthOdometer = previousMonthOdometer;
+    }
+
+    public void setDriver(Driver driver) {
+        this.driver = driver;
+    }
+
+    public void setServices(List<Service> services) {
+        this.services = services;
+    }
+
+    public void setFuelConsumptions(List<FuelConsumption> fuelConsumptions) {
+        this.fuelConsumptions = fuelConsumptions;
+    }
+
+    public void setVehicleUsages(List<VehicleUsage> vehicleUsages) {
+        this.vehicleUsages = vehicleUsages;
+    }
 }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Company List and Vehicles</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        /* Table styling */
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        /* Vehicle card styling */
+        .vehicle-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 30px auto;
+            gap: 20px;
+            width: 90%;
+        }
+
+        .vehicle-card {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            width: 250px;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .vehicle-card:hover {
+            transform: scale(1.03);
+            box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .vehicle-card h3 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .vehicle-card p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Company List</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Company Name</th>
+        <th>Address</th>
+        <th>Phone Number</th>
+        <th>Tax Number</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="company : ${companies}">
+        <td th:text="${company.name}">Name</td>
+        <td th:text="${company.address}">Address</td>
+        <td th:text="${company.phoneNumber}">Phone Number</td>
+        <td th:text="${company.taxNumber}">Tax Number</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Vehicles</h2>
+
+<div class="vehicle-container">
+    <a class="vehicle-card" th:each="vehicle : ${vehicles}" th:href="@{/vehicles(id=${vehicle.plateNumber})}">
+        <h3 th:text="${vehicle.plateNumber}">Plate</h3>
+        <p><strong>Brand:</strong> <span th:text="${vehicle.brand}">Brand</span></p>
+        <p><strong>Model:</strong> <span th:text="${vehicle.model}">Model</span></p>
+        <p><strong>Year:</strong> <span th:text="${vehicle.year}">Year</span></p>
+    </a>
+</div>
+
+</body>
+</html>

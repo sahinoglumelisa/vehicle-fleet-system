@@ -17,13 +17,16 @@
     <div class="card-body">
       <h5 class="card-title text-muted" th:text="'Plate Number: ' + ${vehicle.plateNumber}"></h5>
       <ul class="list-group list-group-flush mt-3">
-        <li class="list-group-item"><strong>Company ID:</strong> <span th:text="${vehicle.companyId}"></span></li>
+        <li class="list-group-item"><strong>Company ID:</strong> <span th:text="${vehicle.customer}"></span></li>
         <li class="list-group-item"><strong>Type:</strong> <span th:text="${vehicle.type}"></span></li>
         <li class="list-group-item"><strong>Status:</strong> <span th:text="${vehicle.status}"></span></li>
         <li class="list-group-item"><strong>Ownership Type:</strong> <span th:text="${vehicle.ownershipType}"></span></li>
         <li class="list-group-item"><strong>Current Odometer:</strong> <span th:text="${vehicle.currentOdometer}"></span> km</li>
         <li class="list-group-item"><strong>Previous Month Odometer:</strong> <span th:text="${vehicle.previousMonthOdometer}"></span> km</li>
-        <li class="list-group-item"><strong>Active:</strong> <span th:text="${vehicle.isActive ? 'Yes' : 'No'}"></span></li>
+        <form th:action="@{/addVehicle}" method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="btn btn-primary">Add Vehicle</button>
+        </form>
       </ul>
     </div>
   </div>

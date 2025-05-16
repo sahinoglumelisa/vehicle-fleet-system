@@ -8,7 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface VehicleRepository extends JpaRepository<Vehicle, Long> {
+public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
     Vehicle findByPlateNumber(String plateNumber);
-    List<Vehicle> findVehicleByStatus(VehicleStatus status);
+    List<Vehicle> findByStatus(VehicleStatus status);
+    List<Vehicle> findVehicleByCustomer(Integer customerId);
+    Vehicle findFirstByCustomerIsNull();
 }
