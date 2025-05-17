@@ -10,5 +10,6 @@ import java.util.Optional;
 public interface DriverRepository extends JpaRepository<Driver, Integer> {
     Optional<Driver> findByUsername(String username);
     Driver findByEmail(String email);
+    Driver findByUserId(Integer id);
 
 }
