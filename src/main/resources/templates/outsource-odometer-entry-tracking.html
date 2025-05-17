@@ -1,2 +1,353 @@
-<h1>Odometer Entry and Tracking</h1>
-<p>This page will track and verify odometer entries from drivers.</p>
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Odometer Entry Tracking</title>
+    <!-- Add CSRF meta tags for Spring Security -->
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    <style>
+        /* Existing styles remain unchanged */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar h2 {
+            color: #ecf0f1;
+            margin-bottom: 20px;
+        }
+        .sidebar form, .sidebar button {
+            margin-bottom: 10px;
+        }
+        .sidebar button {
+            width: 100%;
+            padding: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        .sidebar button:hover {
+            background-color: #2980b9;
+        }
+        .logout-container {
+            margin-top: auto;
+        }
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            background-color: #ecf0f1;
+        }
+        .main-content h1 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #bdc3c7;
+            text-align: left;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        button.small-btn {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            margin-right: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button.small-btn:hover {
+            background-color: #2980b9;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            border-radius: 5px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        .modal-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .modal-btn {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .modal-btn:hover {
+            background-color: #2980b9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Admin Menu</h2>
+
+    <form action="/outsource/management-vehicles" method="get">
+        <button type="submit">Vehicle Management</button>
+    </form>
+
+    <form action="/outsource/service-fuel-management" method="get">
+        <button type="submit">Service and Fuel Consumption Management</button>
+    </form>
+
+    <form action="/outsource/odometer-entry-tracking" method="get">
+        <button type="submit">Odometer Entry and Tracking</button>
+    </form>
+
+    <form action="/outsource/report-prediction" method="get">
+        <button type="submit">Reports and Prediction</button>
+    </form>
+
+    <div class="logout-container">
+        <form action="/outsource/dashboard" method="get">
+            <button type="submit">← Back to Dashboard</button>
+        </form>
+
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content">
+    <h1>Unverified Odometer Entries</h1>
+    <p>Review and approve or correct entries submitted by drivers.</p>
+
+    <!-- Add a hidden form for sending CSRF token with AJAX requests -->
+    <form id="csrf-form" style="display:none">
+        <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
+    </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Driver</th>
+            <th>Plate Number</th>
+            <th>Start Odo</th>
+            <th>End Odo</th>
+            <th>Dates</th>
+            <th>Purpose</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="usage : ${unverifiedUsages}">
+            <td th:text="${driverNames.get(usage.usageId)}">Driver Name</td>
+            <td th:text="${vehiclePlates.get(usage.usageId)}">Plate Number</td>
+            <td th:text="${usage.startOdometer}">Start Odo</td>
+            <td th:text="${usage.endOdometer}">End Odo</td>
+            <td th:text="${usage.startDate} + ' → ' + ${usage.endDate}">Dates</td>
+            <td th:text="${usage.purpose}">Purpose</td>
+            <td>
+                <!-- Approve form -->
+                <form th:action="@{/outsource/verify-usage}" method="post" style="display:inline;">
+                    <input type="hidden" name="usageId" th:value="${usage.usageId}" />
+                    <input type="hidden" name="approved" value="true" />
+                    <input type="hidden" name="_csrf" th:value="${_csrf.token}" />
+                    <button type="submit" class="small-btn">✅ Approve</button>
+                </form>
+
+                <!-- Reject button triggers JS prompt -->
+                <button
+                        class="small-btn"
+                        type="button"
+                        th:attr="data-usageid=${usage.usageId}"
+                        onclick="openRejectModal(this)">❌ Reject</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- Empty state message if no unverified usages -->
+    <div th:if="${#lists.isEmpty(unverifiedUsages)}" style="margin-top: 20px; text-align: center;">
+        <p>No unverified odometer entries found.</p>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close" onclick="closeRejectModal()">&times;</span>
+            <h2>Reject Odometer Entry</h2>
+        </div>
+        <p>Please enter the correct odometer reading:</p>
+        <form id="rejectForm">
+            <div class="form-group">
+                <label for="correctedOdometer">Corrected Odometer Reading:</label>
+                <input type="number" id="correctedOdometer" step="0.1" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="modal-btn" onclick="closeRejectModal()">Cancel</button>
+                <button type="submit" class="modal-btn">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Modal functionality
+    var modal = document.getElementById("rejectModal");
+    var currentUsageId = null;
+
+    function openRejectModal(button) {
+        currentUsageId = button.getAttribute("data-usageid");
+        console.log("Opening modal for usage ID:", currentUsageId);
+        modal.style.display = "block";
+    }
+
+    function closeRejectModal() {
+        modal.style.display = "none";
+        document.getElementById("correctedOdometer").value = "";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            closeRejectModal();
+        }
+    }
+
+    // Add event listener to the form
+    document.getElementById("rejectForm").addEventListener("submit", function(event) {
+        event.preventDefault();
+        submitRejection();
+    });
+
+    // Improved CSRF handling for reject functionality
+    function submitRejection() {
+        var correctedOdometer = document.getElementById("correctedOdometer").value;
+
+        if (!correctedOdometer || correctedOdometer === "") {
+            alert("Please enter a valid odometer reading");
+            return;
+        }
+
+        console.log("Submitting rejection for usage ID:", currentUsageId, "with corrected odometer:", correctedOdometer);
+
+        // Get CSRF token from the hidden form
+        const csrfToken = document.querySelector('input[name="_csrf"]').value;
+
+        // Show loading indicator or disable button
+        var submitButton = document.querySelector('.modal-footer .modal-btn:last-child');
+        submitButton.disabled = true;
+        submitButton.textContent = "Processing...";
+
+        // Create form data for a more traditional form submission
+        const formData = new FormData();
+        formData.append('usageId', currentUsageId);
+        formData.append('correctedOdometer', correctedOdometer);
+        formData.append('_csrf', csrfToken);
+
+        // Send fetch request to the reject endpoint
+        fetch('/outsource/reject-usage', {
+            method: 'POST',
+            body: formData,
+            credentials: 'same-origin' // Important for CSRF
+        })
+            .then(response => {
+                console.log("Response status:", response.status);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error("Error response text:", text);
+                        throw new Error('Server error: ' + response.status);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Success response:", data);
+                closeRejectModal();
+                // Show success message
+                alert("Odometer reading successfully updated");
+                // Reload the page to show updated data
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error updating odometer reading: " + error.message);
+            })
+            .finally(() => {
+                // Reset button state
+                submitButton.disabled = false;
+                submitButton.textContent = "Submit";
+            });
+    }
+</script>
+
+</body>
+</html>
