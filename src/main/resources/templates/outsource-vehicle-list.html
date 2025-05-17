@@ -157,7 +157,7 @@
             <td th:text="${v.model}"></td>
             <td th:text="${v.year}"></td>
             <td th:text="${v.status}"></td>
-            <td th:text="${v.company != null ? v.company.username : 'Unassignmed'}"></td>
+            <td th:text="${v.company != null ? v.company.username : 'Unassigned'}"></td>
             <td th:text="${v.currentOdometer}"></td>
             <td>
                 <form th:action="@{/outsource/management-vehicles/edit}" method="get">
