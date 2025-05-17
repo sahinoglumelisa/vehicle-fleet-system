@@ -22,7 +22,7 @@ CREATE TABLE sys_admins (
 );
 
 CREATE TABLE customers (
-    company_id INTEGER PRIMARY KEY,
+    company_id INTEGER NOT NULL PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE
@@ -114,7 +114,7 @@ VALUES ('admin1', 'hashedpassword1', 'admin1@example.com');
 
 -- Customer (Company)
 INSERT INTO customers (company_id, username, password, email)
-VALUES (1, 'fleet_corp', 'hashedpassword2', 'contact@fleetcorp.com');
+VALUES (1, 'company1', 'hashedpassword2', 'contact@company1.com');
 
 -- Drivers
 INSERT INTO drivers (username, password, email, license_number, license_expiry_date, is_active, company_id)
@@ -166,17 +166,26 @@ VALUES
 (1, 1),
 (2, 2);
 
+-- For services table
 ALTER TABLE services
-DROP CONSTRAINT services_vehicle_id_fkey,
+DROP CONSTRAINT IF EXISTS services_vehicle_id_fkey;
+
+ALTER TABLE services
 ADD CONSTRAINT services_vehicle_id_fkey
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
 
+-- For fuel_consumption table
 ALTER TABLE fuel_consumption
-DROP CONSTRAINT fuel_consumption_vehicle_id_fkey,
+DROP CONSTRAINT IF EXISTS fuel_consumption_vehicle_id_fkey;
+
+ALTER TABLE fuel_consumption
 ADD CONSTRAINT fuel_consumption_vehicle_id_fkey
     FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
 
+-- For vehicle_usage table
 ALTER TABLE vehicle_usage
-DROP CONSTRAINT vehicle_usage_vehicle_id_fkey,
+DROP CONSTRAINT IF EXISTS vehicle_usage_vehicle_id_fkey;
+
+ALTER TABLE vehicle_usage
 ADD CONSTRAINT vehicle_usage_vehicle_id_fkey
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;

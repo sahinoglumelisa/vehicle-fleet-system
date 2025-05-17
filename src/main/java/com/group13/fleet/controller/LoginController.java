@@ -76,7 +76,6 @@ public class LoginController {
                                        HttpServletRequest request) {
 
         Customer customer = customerRepository.findByEmail(email);
-        System.out.println("Bu adam her şeyi biliyor ama her şeyi");
 
         if (customer != null && customer.getPassword().equals(password)) {
             // Authentication successful
