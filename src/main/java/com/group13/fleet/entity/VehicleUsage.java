@@ -40,6 +40,9 @@ public class VehicleUsage {
     @Column(name = "purpose")
     private String purpose;
 
+    @Column(name = "is_verified")
+    private Boolean isVerified;
+
     public Double getDrivenKm() {
         return this.endOdometer - this.startOdometer;
     }

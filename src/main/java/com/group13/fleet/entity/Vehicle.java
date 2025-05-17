@@ -16,6 +16,10 @@ import java.util.List;
 @Table(name = "vehicles")
 @ToString
 public class Vehicle {
+    @ManyToOne
+    @JoinColumn(name = "company_id", insertable = false, updatable = false)
+    private Customer company;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vehicle_id")

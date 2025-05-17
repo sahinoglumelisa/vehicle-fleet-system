@@ -22,7 +22,7 @@ CREATE TABLE sys_admins (
 );
 
 CREATE TABLE customers (
-company_id INTEGER PRIMARY KEY,
+    company_id INTEGER PRIMARY KEY,
     username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE
@@ -30,7 +30,7 @@ company_id INTEGER PRIMARY KEY,
 
 CREATE TABLE drivers (
     user_id SERIAL PRIMARY KEY,
-company_id INTEGER REFERENCES customers(company_id),
+    company_id INTEGER REFERENCES customers(company_id),
     username VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(100) NOT NULL UNIQUE,
@@ -38,7 +38,6 @@ company_id INTEGER REFERENCES customers(company_id),
     license_expiry_date DATE NOT NULL,
     is_active BOOLEAN NOT NULL
 );
-
 
 CREATE TABLE vehicles (
     vehicle_id SERIAL PRIMARY KEY,
@@ -54,7 +53,6 @@ CREATE TABLE vehicles (
     previous_month_odometer DOUBLE PRECISION,
     driver_id INTEGER REFERENCES drivers(user_id)
 );
-
 
 CREATE TABLE services (
     service_id SERIAL PRIMARY KEY,
@@ -84,7 +82,8 @@ CREATE TABLE vehicle_usage (
     end_date DATE,
     start_odometer DOUBLE PRECISION,
     end_odometer DOUBLE PRECISION,
-    purpose TEXT
+    purpose TEXT,
+    is_verified BOOLEAN DEFAULT FALSE
 );
 
 CREATE TABLE reports (
@@ -107,64 +106,77 @@ CREATE TABLE expense_reports (
     PRIMARY KEY (tracker_id, report_id)
 );
 
--- Sample Data Insertion Block
+-- SAMPLE DATA
 
--- Insert admin
+-- Admin
 INSERT INTO sys_admins (username, password, email)
 VALUES ('admin1', 'hashedpassword1', 'admin1@example.com');
 
--- Insert customer (company)
+-- Customer (Company)
 INSERT INTO customers (company_id, username, password, email)
 VALUES (1, 'fleet_corp', 'hashedpassword2', 'contact@fleetcorp.com');
 
--- Insert drivers
+-- Drivers
 INSERT INTO drivers (username, password, email, license_number, license_expiry_date, is_active, company_id)
-VALUES 
+VALUES
 ('driver_anna', 'hashedpassword3', 'anna@fleetcorp.com', 'DL123456', '2026-12-31', true,1),
 ('driver_bob', 'hashedpassword4', 'bob@fleetcorp.com', 'DL654321', '2025-08-20', true,1);
 
--- Insert vehicles
+-- Vehicles
 INSERT INTO vehicles (company_id, plate_number, brand, model, year, type, status, ownership_type, current_odometer, previous_month_odometer, driver_id)
-VALUES 
+VALUES
 (1, 'ABC123', 'Toyota', 'Corolla', 2020, 'SEDAN', 'ASSIGNED', 'OWNED', 50200, 49000, 1),
 (1, 'XYZ789', 'Ford', 'Transit', 2019, 'VAN', 'IN_SERVICE', 'LEASED', 78200, 77000, 2);
 
--- Insert services
+-- Services
 INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
-VALUES 
+VALUES
 (1, '2025-04-10', 'REGULAR_MAINTENANCE', 'Oil change and filter replacement', 120.00, false),
 (2, '2025-04-15', 'TIRE_CHANGE', 'Replaced all four tires', 400.00, true);
 
--- Insert fuel consumption
+-- Fuel Consumption
 INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
-VALUES 
+VALUES
 (1, 1, '2025-04-05', 40.5, 85.00, 49500),
 (2, 2, '2025-04-06', 55.0, 120.00, 77500);
 
--- Insert vehicle usage
-INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose)
-VALUES 
-(1, 1, '2025-04-01', '2025-04-05', 49000, 49500, 'Client visits'),
-(2, 2, '2025-04-03', '2025-04-07', 77000, 77500, 'Delivery'),
-(1, 1, '2025-05-01', '2025-05-05', 49000, 49500, 'Client visits 2'),
-(2, 1, '2025-05-10', '2025-05-31', 77000, 77500, 'Delivery 2');
+-- Vehicle Usage (is_verified = false hepsinde)
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES
+(1, 1, '2025-04-01', '2025-04-05', 49000, 49500, 'Client visits', FALSE),
+(2, 2, '2025-04-03', '2025-04-07', 77000, 77500, 'Delivery', FALSE),
+(1, 1, '2025-05-01', '2025-05-05', 49000, 49500, 'Client visits 2', FALSE),
+(2, 1, '2025-05-10', '2025-05-31', 77000, 77500, 'Delivery 2', FALSE);
 
--- Insert reports
+-- Reports
 INSERT INTO reports (generated_date, type, title, data)
-VALUES 
+VALUES
 ('2025-04-30', 'FUEL_CONSUMPTION', 'Monthly Fuel Report - April', 'Summary of fuel usage for April'),
 ('2025-04-30', 'MAINTENANCE_COST', 'Maintenance Summary - April', 'Details of service and maintenance costs');
 
--- Insert into expense_tracker
+-- Expense Tracker
 INSERT INTO expense_tracker (company_id, expense_type)
-VALUES 
+VALUES
 (1, 'FUEL'),
 (1, 'MAINTENANCE');
 
--- Link expense_tracker to reports
+-- Expense Reports
 INSERT INTO expense_reports (tracker_id, report_id)
-VALUES 
+VALUES
 (1, 1),
 (2, 2);
 
+ALTER TABLE services
+DROP CONSTRAINT services_vehicle_id_fkey,
+ADD CONSTRAINT services_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
 
+ALTER TABLE fuel_consumption
+DROP CONSTRAINT fuel_consumption_vehicle_id_fkey,
+ADD CONSTRAINT fuel_consumption_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
+
+ALTER TABLE vehicle_usage
+DROP CONSTRAINT vehicle_usage_vehicle_id_fkey,
+ADD CONSTRAINT vehicle_usage_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;

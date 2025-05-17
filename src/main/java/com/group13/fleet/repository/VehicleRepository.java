@@ -15,4 +15,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
     List<Vehicle> findVehicleByCustomer(Integer customerId);
     Vehicle findFirstByCustomerIsNull();
     Optional<Vehicle> findVehicleByDriver(Integer driverId);
+    List<Vehicle> findByOwnershipType(com.group13.fleet.entity.OwnershipType ownershipType);
 }
+
+

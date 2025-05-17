@@ -23,7 +23,8 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class DashboardController {
@@ -159,11 +160,45 @@ public class DashboardController {
     }
 
     @GetMapping("/driver/dashboard/enter-km")
-    public String showKm(Model model) {
-        model.addAttribute("vehicles", vehicleRepository.findAll());
-        System.out.println(model.getAttribute("vehicles"));
+    public String showKm(Model model, HttpSession session) {
+        Integer driverId = (Integer) session.getAttribute("driverId");
+        if (driverId == null) {
+            return "redirect:/login";
+        }
+
+        Optional<Driver> driverOpt = driverRepository.findById(driverId);
+        if (driverOpt.isEmpty()) {
+            return "redirect:/login";
+        }
+
+        Driver driver = driverOpt.get();
+        Optional<Vehicle> vehicle = vehicleRepository.findVehicleByDriver(driver.getUserId());
+        Optional<VehicleUsage> vehicleUsage = vehicleUsageRepository.findFirstOngoingOrUpcomingUsage(driver.getUserId());
+
+        String companyName = customerRepository.findById(driver.getCompanyId()).get().getUsername().toUpperCase();
+        model.addAttribute("companyName", companyName);
+        model.addAttribute("hasVehicle", vehicle.isPresent());
+        vehicle.ifPresent(v -> model.addAttribute("vehicle", v));
+        vehicleUsage.ifPresent(usage -> model.addAttribute("usage", usage));
+
         return "enter-km";
     }
+
+    @PostMapping("/driver/dashboard/submit-km")
+    public String submitKm(@RequestParam("usageId") int usageId,
+                           @RequestParam("endOdometer") double endOdometer,
+                           HttpSession session) {
+
+        VehicleUsage usage = vehicleUsageRepository.findById(usageId)
+                .orElseThrow(() -> new RuntimeException("Usage not found"));
+
+        usage.setEndOdometer(endOdometer);
+        usage.setIsVerified(false);  // Admin henüz onaylamadı
+        vehicleUsageRepository.save(usage);
+
+        return "redirect:/driver/dashboard";
+    }
+
 
 
 

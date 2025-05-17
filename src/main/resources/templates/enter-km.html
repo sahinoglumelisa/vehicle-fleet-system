@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Enter KM</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .sidebar a,
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #34495e;
+            color: white;
+            text-align: left;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .sidebar a:hover,
+        .sidebar button:hover {
+            background-color: #3d566e;
+        }
+
+        .sidebar a.back-button {
+            background-color: #3498db;
+        }
+
+        .sidebar a.back-button:hover {
+            background-color: #2980b9;
+        }
+
+        .logout-container {
+            margin-top: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            background-color: #ecf0f1;
+        }
+
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        form label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Driver Menu</h2>
+
+    <a th:href="@{/driver/dashboard/duty-and-car}">Show Assigned Duty and Car</a>
+    <a th:href="@{/driver/dashboard/enter-km}">Enter-Km</a>
+    <a th:href="@{/driver/dashboard}" class="back-button">← Back to Dashboard</a>
+
+    <div class="logout-container">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content">
+    <h1>Enter KM for Current Duty</h1>
+
+    <div th:if="${usage != null}" class="card">
+        <h3>Duty Info</h3>
+        <p><strong>Purpose:</strong> <span th:text="${usage.purpose}"></span></p>
+        <p><strong>Start Date:</strong> <span th:text="${usage.startDate}"></span></p>
+        <p><strong>End Date:</strong> <span th:text="${usage.endDate}"></span></p>
+        <p><strong>Start Odometer:</strong> <span th:text="${usage.startOdometer}"></span></p>
+
+        <form method="post" th:action="@{/driver/dashboard/submit-km}">
+            <input type="hidden" name="usageId" th:value="${usage.usageId}" />
+            <label for="endOdometer">End Odometer:</label>
+            <input type="number" step="0.1" name="endOdometer" required />
+            <button type="submit">Submit KM</button>
+        </form>
+    </div>
+
+    <div th:if="${usage == null}" class="card">
+        <p><em>No ongoing duty found.</em></p>
+    </div>
+</div>
+
+</body>
+</html>

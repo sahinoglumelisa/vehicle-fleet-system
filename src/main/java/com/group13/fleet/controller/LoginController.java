@@ -193,7 +193,7 @@ public class LoginController {
 
 
             // Redirect to admin dashboard
-            return "redirect:/";
+            return "redirect:/outsource";
         } else {
             // Authentication failed
             redirectAttributes.addFlashAttribute("error", "Invalid email or password");
