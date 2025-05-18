@@ -111,6 +111,10 @@
     </form>
 
     <div class="logout-container">
+        <form action="/outsource" method="get">
+            <button type="submit">← Back to Dashboard</button>
+        </form>
+
         <form th:action="@{/logout}" method="post">
             <button type="submit">Logout</button>
         </form>
