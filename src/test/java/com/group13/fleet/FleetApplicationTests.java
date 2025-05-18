@@ -15,6 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.group13.fleet.controller.OutsourceVehicleManagementController;
+import com.group13.fleet.entity.OwnershipType;
+import com.group13.fleet.entity.VehicleStatus;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -49,11 +54,16 @@ class FleetApplicationTests {
 	@InjectMocks
 	private OutsourceServiceFuelController controller;
 
+	@InjectMocks
+	private OutsourceVehicleManagementController vehicleController;
+
+	private MockMvc vehicleMockMvc;
 	private MockMvc mockMvc;
 
 	@BeforeEach
 	void setUp() {
 		mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+		vehicleMockMvc = MockMvcBuilders.standaloneSetup(vehicleController).build();
 	}
 
 	@Test
@@ -267,4 +277,218 @@ class FleetApplicationTests {
 		fuelConsumption.setDate(new java.sql.Date(System.currentTimeMillis()));
 		return fuelConsumption;
 	}
+
+	@Test
+	void testListVehicles() throws Exception {
+		// Mock data - only leased vehicles
+		List<Vehicle> leasedVehicles = Arrays.asList(
+				createMockLeasedVehicle(1, "Toyota", "Camry", "ABC123"),
+				createMockLeasedVehicle(2, "Honda", "Civic", "DEF456")
+		);
+
+		when(vehicleRepository.findByOwnershipType(OwnershipType.LEASED)).thenReturn(leasedVehicles);
+
+		vehicleMockMvc.perform(get("/outsource/management-vehicles/list"))
+				.andExpect(status().isOk())
+				.andExpect(view().name("outsource-vehicle-list"))
+				.andExpect(model().attributeExists("vehicles"))
+				.andExpect(model().attribute("vehicles", leasedVehicles));
+
+		verify(vehicleRepository).findByOwnershipType(OwnershipType.LEASED);
+	}
+
+	@Test
+	void testAddVehicleForm() throws Exception {
+		vehicleMockMvc.perform(get("/outsource/management-vehicles/add"))
+				.andExpect(status().isOk())
+				.andExpect(view().name("outsource-vehicle-add"))
+				.andExpect(model().attributeExists("vehicle"));
+	}
+
+	@Test
+	void testAddVehicle_Success() throws Exception {
+		Vehicle savedVehicle = createMockLeasedVehicle(1, "Ford", "Focus", "GHI789");
+
+		when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
+
+		vehicleMockMvc.perform(post("/outsource/management-vehicles/add")
+						.param("brand", "Ford")
+						.param("model", "Focus")
+						.param("plateNumber", "GHI789")
+						.param("year", "2023")
+						.param("currentOdometer", "15000")
+						.param("type", "SEDAN")
+						.param("status", "ASSIGNED"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/outsource/management-vehicles/list"));
+
+		verify(vehicleRepository).save(any(Vehicle.class));
+	}
+
+	@Test
+	void testAddVehicle_WithNullPreviousOdometer() throws Exception {
+		// Test that previous month odometer is set to current odometer when null
+		Vehicle capturedVehicle = null;
+
+		when(vehicleRepository.save(any(Vehicle.class))).thenAnswer(invocation -> {
+			Vehicle vehicle = invocation.getArgument(0);
+			// Verify that the logic was applied correctly
+			assertEquals(OwnershipType.LEASED, vehicle.getOwnershipType());
+			assertEquals(vehicle.getCurrentOdometer(), vehicle.getPreviousMonthOdometer());
+			assertNull(vehicle.getCustomer());
+			return vehicle;
+		});
+
+		vehicleMockMvc.perform(post("/outsource/management-vehicles/add")
+						.param("brand", "BMW")
+						.param("model", "X3")
+						.param("plateNumber", "JKL012")
+						.param("year", "2022")
+						.param("currentOdometer", "20000"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/outsource/management-vehicles/list"));
+
+		verify(vehicleRepository).save(any(Vehicle.class));
+	}
+
+	@Test
+	void testShowEditForm_VehicleExists() throws Exception {
+		Vehicle existingVehicle = createMockLeasedVehicle(1, "Audi", "A4", "MNO345");
+
+		when(vehicleRepository.findByPlateNumber("MNO345")).thenReturn(existingVehicle);
+
+		vehicleMockMvc.perform(get("/outsource/management-vehicles/edit")
+						.param("plate", "MNO345"))
+				.andExpect(status().isOk())
+				.andExpect(view().name("outsource-vehicle-edit"))
+				.andExpect(model().attributeExists("vehicle"))
+				.andExpect(model().attribute("vehicle", existingVehicle));
+
+		verify(vehicleRepository).findByPlateNumber("MNO345");
+	}
+
+	@Test
+	void testShowEditForm_VehicleNotFound() throws Exception {
+		when(vehicleRepository.findByPlateNumber("NOTFOUND")).thenReturn(null);
+
+		vehicleMockMvc.perform(get("/outsource/management-vehicles/edit")
+						.param("plate", "NOTFOUND"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/outsource/management-vehicles/list"));
+
+		verify(vehicleRepository).findByPlateNumber("NOTFOUND");
+	}
+
+	@Test
+	void testUpdateVehicle_Success() throws Exception {
+		Vehicle existingVehicle = createMockLeasedVehicle(1, "Mercedes", "C-Class", "PQR678");
+		existingVehicle.setYear(2020);
+		existingVehicle.setCurrentOdometer(30000.0);
+
+		when(vehicleRepository.findByPlateNumber("PQR678")).thenReturn(existingVehicle);
+		when(vehicleRepository.save(any(Vehicle.class))).thenReturn(existingVehicle);
+
+		vehicleMockMvc.perform(post("/outsource/management-vehicles/edit")
+						.param("plateNumber", "PQR678")
+						.param("brand", "Mercedes")
+						.param("model", "C-Class")
+						.param("year", "2021")
+						.param("currentOdometer", "35000")
+						.param("type", "SEDAN")
+						.param("status", "ASSIGNED"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/outsource/management-vehicles/list"));
+
+		verify(vehicleRepository).findByPlateNumber("PQR678");
+		verify(vehicleRepository).save(existingVehicle);
+
+		// Verify that the vehicle was updated
+		assertEquals("Mercedes", existingVehicle.getBrand());
+		assertEquals("C-Class", existingVehicle.getModel());
+		assertEquals(2021, existingVehicle.getYear());
+		assertEquals(35000.0, existingVehicle.getCurrentOdometer());
+	}
+
+	@Test
+	void testUpdateVehicle_VehicleNotFound() throws Exception {
+		when(vehicleRepository.findByPlateNumber("NOTFOUND")).thenReturn(null);
+
+		vehicleMockMvc.perform(post("/outsource/management-vehicles/edit")
+						.param("plateNumber", "NOTFOUND")
+						.param("brand", "Toyota")
+						.param("model", "Prius")
+						.param("year", "2023"))
+				.andExpect(status().is3xxRedirection())
+				.andExpect(redirectedUrl("/outsource/management-vehicles/list"));
+
+		verify(vehicleRepository).findByPlateNumber("NOTFOUND");
+		verify(vehicleRepository, never()).save(any(Vehicle.class));
+	}
+
+	@Test
+	void testAddVehicle_DirectControllerCall() {
+		// Test the controller method directly
+		Vehicle vehicle = new Vehicle();
+		vehicle.setBrand("Tesla");
+		vehicle.setModel("Model 3");
+		vehicle.setPlateNumber("STU901");
+		vehicle.setCurrentOdometer(5000.0);
+
+		when(vehicleRepository.save(any(Vehicle.class))).thenReturn(vehicle);
+
+		String result = vehicleController.addVehicle(vehicle);
+
+		assertEquals("redirect:/outsource/management-vehicles/list", result);
+		assertEquals(OwnershipType.LEASED, vehicle.getOwnershipType());
+		assertNull(vehicle.getCustomer());
+		assertEquals(vehicle.getCurrentOdometer(), vehicle.getPreviousMonthOdometer());
+
+		verify(vehicleRepository).save(vehicle);
+	}
+
+	@Test
+	void testUpdateVehicle_DirectControllerCall() {
+		// Test the controller method directly
+		Vehicle existingVehicle = createMockLeasedVehicle(1, "Volkswagen", "Golf", "VWX234");
+		Vehicle updatedVehicle = new Vehicle();
+		updatedVehicle.setPlateNumber("VWX234");
+		updatedVehicle.setBrand("Volkswagen");
+		updatedVehicle.setModel("Golf GTI");
+		updatedVehicle.setYear(2023);
+		updatedVehicle.setStatus(VehicleStatus.AVAILABLE);
+		updatedVehicle.setCurrentOdometer(18000.0);
+
+		when(vehicleRepository.findByPlateNumber("VWX234")).thenReturn(existingVehicle);
+		when(vehicleRepository.save(existingVehicle)).thenReturn(existingVehicle);
+
+		String result = vehicleController.updateVehicle(updatedVehicle);
+
+		assertEquals("redirect:/outsource/management-vehicles/list", result);
+
+		// Verify that existing vehicle was updated
+		assertEquals("Volkswagen", existingVehicle.getBrand());
+		assertEquals("Golf GTI", existingVehicle.getModel());
+		assertEquals(2023, existingVehicle.getYear());
+		assertEquals(VehicleStatus.AVAILABLE, existingVehicle.getStatus());
+		assertEquals(18000.0, existingVehicle.getCurrentOdometer());
+
+		verify(vehicleRepository).findByPlateNumber("VWX234");
+		verify(vehicleRepository).save(existingVehicle);
+	}
+
+	// Add this helper method to your existing helper methods:
+	private Vehicle createMockLeasedVehicle(int id, String brand, String model, String plateNumber) {
+		Vehicle vehicle = new Vehicle();
+		vehicle.setVehicleId(id);
+		vehicle.setBrand(brand);
+		vehicle.setModel(model);
+		vehicle.setPlateNumber(plateNumber);
+		vehicle.setOwnershipType(OwnershipType.LEASED);
+		vehicle.setYear(2022);
+		vehicle.setStatus(VehicleStatus.AVAILABLE);
+		vehicle.setCurrentOdometer(10000.0);
+		vehicle.setPreviousMonthOdometer(9500.0);
+		return vehicle;
+	}
+
 }
