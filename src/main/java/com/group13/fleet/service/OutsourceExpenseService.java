@@ -21,11 +21,11 @@ public class OutsourceExpenseService {
         // Get total expenses by category for leased vehicles
         String sql = """
             SELECT 
-                SUM(CASE WHEN s.service_type IN ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE') 
-                         THEN s.cost ELSE 0 END) as maintenance_cost,
-                SUM(CASE WHEN s.service_type = 'REPAIR' 
-                         THEN s.cost ELSE 0 END) as repair_cost,
-                SUM(fc.cost) as fuel_cost,
+                COALESCE(SUM(CASE WHEN s.service_type IN ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE') 
+                         THEN s.cost ELSE 0 END), 0) as maintenance_cost,
+                COALESCE(SUM(CASE WHEN s.service_type = 'REPAIR' 
+                         THEN s.cost ELSE 0 END), 0) as repair_cost,
+                COALESCE(SUM(fc.cost), 0) as fuel_cost,
                 0 as insurance_cost -- Insurance tracking needs to be implemented
             FROM vehicles v
             LEFT JOIN services s ON v.vehicle_id = s.vehicle_id 
@@ -37,10 +37,11 @@ public class OutsourceExpenseService {
 
         Map<String, Object> result = jdbcTemplate.queryForMap(sql, targetDate, targetDate);
 
-        double maintenanceCost = ((Number) result.get("maintenance_cost")).doubleValue();
-        double repairCost = ((Number) result.get("repair_cost")).doubleValue();
-        double fuelCost = ((Number) result.get("fuel_cost")).doubleValue();
-        double insuranceCost = ((Number) result.get("insurance_cost")).doubleValue();
+        // Safe null-checking when extracting values
+        double maintenanceCost = getDoubleValue(result.get("maintenance_cost"));
+        double repairCost = getDoubleValue(result.get("repair_cost"));
+        double fuelCost = getDoubleValue(result.get("fuel_cost"));
+        double insuranceCost = getDoubleValue(result.get("insurance_cost"));
         double totalCost = maintenanceCost + repairCost + fuelCost + insuranceCost;
 
         summary.put("maintenanceCost", maintenanceCost);
@@ -121,10 +122,10 @@ public class OutsourceExpenseService {
             Map<String, Object> monthData = jdbcTemplate.queryForMap(sql, monthDate, monthDate);
             monthData.put("month", monthLabel);
 
-            double total = ((Number) monthData.get("maintenance")).doubleValue() +
-                    ((Number) monthData.get("repair")).doubleValue() +
-                    ((Number) monthData.get("fuel")).doubleValue() +
-                    ((Number) monthData.get("insurance")).doubleValue();
+            double total = getDoubleValue(monthData.get("maintenance")) +
+                    getDoubleValue(monthData.get("repair")) +
+                    getDoubleValue(monthData.get("fuel")) +
+                    getDoubleValue(monthData.get("insurance"));
             monthData.put("total", total);
 
             chartData.add(monthData);
@@ -142,8 +143,8 @@ public class OutsourceExpenseService {
         String sql = """
             SELECT 
                 DATE_TRUNC('month', COALESCE(s.service_date, fc.date)) as month,
-                SUM(COALESCE(s.cost, 0)) as service_cost,
-                SUM(COALESCE(fc.cost, 0)) as fuel_cost
+                COALESCE(SUM(COALESCE(s.cost, 0)), 0) as service_cost,
+                COALESCE(SUM(COALESCE(fc.cost, 0)), 0) as fuel_cost
             FROM vehicles v
             LEFT JOIN services s ON v.vehicle_id = s.vehicle_id 
                 AND s.service_date >= CURRENT_DATE - INTERVAL '12 months'
@@ -170,11 +171,11 @@ public class OutsourceExpenseService {
 
         if (historicalData.size() >= 3) {
             double avgServiceCost = historicalData.stream()
-                    .mapToDouble(data -> ((Number) data.get("service_cost")).doubleValue())
+                    .mapToDouble(data -> getDoubleValue(data.get("service_cost")))
                     .average().orElse(0.0);
 
             double avgFuelCost = historicalData.stream()
-                    .mapToDouble(data -> ((Number) data.get("fuel_cost")).doubleValue())
+                    .mapToDouble(data -> getDoubleValue(data.get("fuel_cost")))
                     .average().orElse(0.0);
 
             prediction.put("predictedServiceCost", avgServiceCost);
@@ -183,5 +184,16 @@ public class OutsourceExpenseService {
         }
 
         return prediction;
+    }
+
+    // Helper method to safely extract double values from potentially null objects
+    private double getDoubleValue(Object value) {
+        if (value == null) {
+            return 0.0;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        return 0.0;
     }
 }
