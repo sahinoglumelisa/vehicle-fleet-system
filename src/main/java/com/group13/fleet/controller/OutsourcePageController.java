@@ -88,7 +88,7 @@ public class OutsourcePageController {
             VehicleUsage usage = optionalUsage.get();
 
             // Mark the usage as verified
-            usage.setIsVerified(true);
+            usage.setVerified(true);
             vehicleUsageRepository.save(usage);
 
             if (approved) {
@@ -120,7 +120,7 @@ public class OutsourcePageController {
                 // Update both start and end odometer to the corrected value
                 usage.setStartOdometer(correctedOdometer);
                 usage.setEndOdometer(correctedOdometer);
-                usage.setIsVerified(true);  // Mark as verified
+                usage.setVerified(true);  // Mark as verified
                 vehicleUsageRepository.save(usage);
                 System.out.println("Usage updated successfully");
 

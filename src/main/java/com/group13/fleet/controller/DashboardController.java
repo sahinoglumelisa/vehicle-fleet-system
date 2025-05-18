@@ -2,6 +2,7 @@ package com.group13.fleet.controller;
 
 import com.group13.fleet.entity.Driver;
 import com.group13.fleet.entity.Vehicle;
+import com.group13.fleet.entity.VehicleStatus;
 import com.group13.fleet.entity.VehicleUsage;
 import com.group13.fleet.repository.CustomerRepository;
 import com.group13.fleet.repository.DriverRepository;
@@ -43,6 +44,7 @@ public class DashboardController {
         System.out.println(model.getAttribute("vehicles"));
         return "dashboard";
     }
+
 
     @GetMapping("/driver/dashboard")
     public String showDriverDashboard(Model model, HttpSession session) {
@@ -110,7 +112,6 @@ public class DashboardController {
         model.addAttribute("daysUntilExpiry", daysUntilExpiry);
         return "driver-dashboard";
     }
-
 
 
     @GetMapping("/driver/dashboard/duty-and-car")
@@ -193,12 +194,38 @@ public class DashboardController {
                 .orElseThrow(() -> new RuntimeException("Usage not found"));
 
         usage.setEndOdometer(endOdometer);
-        usage.setIsVerified(false);  // Admin henüz onaylamadı
+        usage.setVerified(false);  // Admin henüz onaylamadı
         vehicleUsageRepository.save(usage);
 
         return "redirect:/driver/dashboard";
     }
 
+    @GetMapping("/customer/dashboard")
+    public String showCustomerDashboard(Model model, HttpSession session) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        List<Vehicle> vehicles = vehicleRepository.findVehicleByCustomer(customerId);
+        model.addAttribute("vehicles", vehicles);
+
+        model.addAttribute("totalVehicles", vehicles.size());
+        model.addAttribute("activeVehicles", vehicles.stream().filter(vehicle -> vehicle.getStatus()== VehicleStatus.ASSIGNED).count());
+        model.addAttribute("maintenanceVehicles", vehicles.stream().filter(vehicle -> vehicle.getStatus()==VehicleStatus.IN_SERVICE).count());
+
+        return "customer-dashboard";
+    }
+
+    @GetMapping("/customer/dashboard/report")
+    public String showReportPage(Model model, HttpSession session) {
+        return "customer-dashboard-report";
+    }
+
+    @GetMapping("/customer/dashboard/assign")
+    public String showAssignPage(Model model, HttpSession session) {
+        List<Driver> drivers = vehicleRepository.findDriversByCompanyId((Integer) session.getAttribute("companyId"));
+        model.addAttribute("drivers", drivers);
+        System.out.println(drivers);
+        return "customer-dashboard-assign";
+    }
 
 
 

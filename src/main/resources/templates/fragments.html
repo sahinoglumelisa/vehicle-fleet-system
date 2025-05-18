@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+<!-- Sidebar -->
+<div class="sidebar" th:fragment="sidebar">
+    <style>
+        .sidebar {
+            width: 250px;
+            background-color: #1a2942;
+            color: #ffffff;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2d3c55;
+            margin-bottom: 20px;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            color: #c5d0e0;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: #2d3c55;
+            color: #ffffff;
+            border-left: 4px solid #3498db;
+        }
+    </style>
+    <div class="company-name">FleetManager</div>
+    <div class="nav-links">
+        <a th:href="@{/dashboard}" class="nav-item active">My Vehicles</a>
+        <a th:href="@{/customer/dashboard/reports}" class="nav-item">Reports</a>
+        <a th:href="@{/customer/dashboard/assign}" class="nav-item">Assign Job</a>
+    </div>
+</div>
+</body>
+</html>

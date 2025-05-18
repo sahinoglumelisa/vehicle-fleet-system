@@ -84,4 +84,8 @@ public class Driver {
     public List<VehicleUsage> getVehicleUsages() {
         return vehicleUsages;
     }
+
+    public Integer getCompanyId() {
+        return companyId;
+    }
 }

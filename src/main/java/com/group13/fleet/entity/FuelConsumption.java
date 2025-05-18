@@ -39,4 +39,60 @@ public class FuelConsumption {
 
     @Column(name = "odometer_reading")
     private Double odometerReading;
+
+    public Long getFuelId() {
+        return fuelId;
+    }
+
+    public void setFuelId(Long fuelId) {
+        this.fuelId = fuelId;
+    }
+
+    public Integer getVehicle() {
+        return vehicle;
+    }
+
+    public void setVehicle(Integer vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    public Integer getDriver() {
+        return driver;
+    }
+
+    public void setDriver(Integer driver) {
+        this.driver = driver;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public Double getLiters() {
+        return liters;
+    }
+
+    public void setLiters(Double liters) {
+        this.liters = liters;
+    }
+
+    public Double getCost() {
+        return cost;
+    }
+
+    public void setCost(Double cost) {
+        this.cost = cost;
+    }
+
+    public Double getOdometerReading() {
+        return odometerReading;
+    }
+
+    public void setOdometerReading(Double odometerReading) {
+        this.odometerReading = odometerReading;
+    }
 }
