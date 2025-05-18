@@ -1,11 +1,11 @@
 package com.group13.fleet.controller;
 
-import com.group13.fleet.entity.Driver;
-import com.group13.fleet.entity.FuelConsumption;
-import com.group13.fleet.entity.Vehicle;
+import com.group13.fleet.entity.*;
 import com.group13.fleet.repository.DriverRepository;
 import com.group13.fleet.repository.FuelConsumptionRepository;
+import com.group13.fleet.repository.ServiceRepository;
 import com.group13.fleet.repository.VehicleRepository;
+import org.antlr.v4.runtime.misc.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,9 +30,27 @@ public class OutsourceServiceFuelController {
     @Autowired
     private FuelConsumptionRepository fuelConsumptionRepository;
 
+    @Autowired
+    private ServiceRepository serviceRepository;
+
     @GetMapping("/outsource/service-fuel-management")
     public String showServiceFuelManagement(Model model) {
         return "outsource-service-fuel-management"; // service-fuel-management.html
+    }
+
+    @GetMapping("/outsource/service-fuel-management/service-entry")
+    public String showServiceEntryForm(Model model) {
+        model.addAttribute("service", new Service());
+        model.addAttribute("serviceTypes", ServiceType.values());
+        model.addAttribute("vehicles", vehicleRepository.findAll());
+        return "outsource-service-entry";
+    }
+
+    @PostMapping("/outsource/service-fuel-management/service-entry")
+    public String submitServiceEntry(@ModelAttribute Service service) {
+        service.setServiceDate(new Date()); // or bind from form
+        serviceRepository.save(service);
+        return "redirect:/outsource/service-fuel-management";
     }
 
     @GetMapping("/outsource/service-fuel-management/fuel-tracking")

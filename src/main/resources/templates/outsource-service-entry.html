@@ -1,2 +1,345 @@
-<h1>Service Entry</h1>
-<p>Here you can record vehicle maintenance operations.</p>
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Record New Service</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            background-color: #ecf0f1;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .back-button {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: inline-block;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+
+        .sidebar form {
+            margin: 0;
+        }
+
+        .sidebar button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar button:hover {
+            background-color: #2980b9;
+        }
+
+        .logout-container {
+            margin-top: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            background-color: #ecf0f1;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .form-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 300;
+        }
+
+        .form-body {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #fff;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-group select option[disabled] {
+            color: #999;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .checkbox-group select {
+            flex: 1;
+        }
+
+        .submit-container {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .cost-input-wrapper {
+            position: relative;
+        }
+
+        .cost-input-wrapper::before {
+            content: '$';
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+            font-weight: bold;
+        }
+
+        .cost-input-wrapper input {
+            padding-left: 25px;
+        }
+
+        /* Icon styling for better visual hierarchy */
+        .form-group::before {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            vertical-align: middle;
+        }
+
+        .vehicle-group::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%233498db' viewBox='0 0 24 24'%3E%3Cpath d='M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z'/%3E%3C/svg%3E");
+        }
+
+        .service-type-group::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%233498db' viewBox='0 0 24 24'%3E%3Cpath d='M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z'/%3E%3C/svg%3E");
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .form-body {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Admin Menu</h2>
+
+    <form action="/outsource/management-vehicles" method="get">
+        <button type="submit">Vehicle Management</button>
+    </form>
+
+    <form action="/outsource/service-fuel-management" method="get">
+        <button type="submit">Service and Fuel Consumption Management</button>
+    </form>
+
+    <form action="/outsource/odometer-entry-tracking" method="get">
+        <button type="submit">Odometer Entry and Tracking</button>
+    </form>
+
+    <form action="/outsource/report-prediction" method="get">
+        <button type="submit">Reports and Prediction</button>
+    </form>
+
+    <div class="logout-container">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <a href="/outsource/service-fuel-management" class="back-button">← Back to Service & Fuel Management</a>
+    <div class="form-container">
+        <div class="form-header">
+
+            <h1>Record New Service</h1>
+        </div>
+
+        <div class="form-body">
+            <form th:action="@{/outsource/service-fuel-management/service-entry}" method="post" th:object="${service}">
+                <div class="form-grid">
+                    <div class="form-group vehicle-group">
+                        <label for="vehicle">Vehicle</label>
+                        <select th:field="*{vehicle}" id="vehicle" required>
+                            <option value="" disabled selected>Select Vehicle</option>
+                            <option th:each="vehicle : ${vehicles}" th:value="${vehicle.vehicleId}" th:text="${vehicle.plateNumber}">Vehicle</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group service-type-group">
+                        <label for="serviceType">Service Type</label>
+                        <select th:field="*{serviceType}" id="serviceType" required>
+                            <option value="" disabled selected>Select Service Type</option>
+                            <option th:each="type : ${serviceTypes}" th:value="${type}" th:text="${type}">Type</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="description">Service Description</label>
+                        <textarea th:field="*{description}" id="description" rows="4" placeholder="Provide detailed information about the service performed..." required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cost">Service Cost</label>
+                        <div class="cost-input-wrapper">
+                            <input type="number" step="0.01" th:field="*{cost}" id="cost" placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="isCoveredByInsurance">Insurance Coverage</label>
+                        <select th:field="*{isCoveredByInsurance}" id="isCoveredByInsurance" required>
+                            <option value="" disabled selected>Select Coverage</option>
+                            <option th:value="true">Covered by Insurance</option>
+                            <option th:value="false">Not Covered</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="submit-container">
+                    <button type="submit" class="submit-btn">Submit Service Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
