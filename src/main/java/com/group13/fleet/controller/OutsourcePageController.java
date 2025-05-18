@@ -92,12 +92,18 @@ public class OutsourcePageController {
             vehicleUsageRepository.save(usage);
 
             if (approved) {
-                // When approved, update the vehicle's current odometer reading
+                // When approved, update the vehicle's odometer readings
                 Integer vehicleId = usage.getVehicle();
                 Optional<Vehicle> optionalVehicle = vehicleRepository.findById(vehicleId);
                 if (optionalVehicle.isPresent()) {
                     Vehicle vehicle = optionalVehicle.get();
+
+                    // First save previous -> current
+                    vehicle.setPreviousMonthOdometer(vehicle.getCurrentOdometer());
+
+                    // Then update current -> usage.end
                     vehicle.setCurrentOdometer(usage.getEndOdometer());
+
                     vehicleRepository.save(vehicle);
                 }
             }
@@ -105,6 +111,7 @@ public class OutsourcePageController {
 
         return "redirect:/outsource/odometer-entry-tracking";
     }
+
 
     @PostMapping("/outsource/reject-usage")
     @ResponseBody
