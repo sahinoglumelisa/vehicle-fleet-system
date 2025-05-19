@@ -65,8 +65,8 @@ public class DriverController {
 
         VehicleUsage vehicleUsage = new VehicleUsage(
                 null,
-                driverId,
                 vehicleId,
+                driverId,
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
                 vehicle.getCurrentOdometer(),
