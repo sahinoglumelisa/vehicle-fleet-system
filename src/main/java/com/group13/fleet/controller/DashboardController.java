@@ -298,7 +298,7 @@ public class DashboardController {
 
         model.addAttribute("vehicle", newVehicle);
         model.addAttribute("customerId", customerId);
-        return "customer-owned-vehxicle";
+        return "customer-owned-vehicle";
     }
 
     @GetMapping("/customer/dashboard/report")
