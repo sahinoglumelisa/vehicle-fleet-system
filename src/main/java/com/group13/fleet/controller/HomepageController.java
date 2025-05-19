@@ -36,7 +36,6 @@ public class HomepageController {
         model.addAttribute("vehicles", vehicles);
         List<Vehicle> myVehicles = vehicleRepository.findVehicleByCustomer(customerId);
         System.out.println(myVehicles);
-        System.out.println("sex");
         model.addAttribute("myVehicles", myVehicles);
         System.out.println(vehicles);
         return "homepage";
