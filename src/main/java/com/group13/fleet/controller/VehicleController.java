@@ -79,7 +79,6 @@ public class VehicleController {
         vehicle.setCustomer(customerId);
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicle.setOwnershipType(OwnershipType.OWNED);
-        vehicle.setCurrentOdometer(0.0);
         vehicle.setPreviousMonthOdometer(vehicle.getCurrentOdometer());
         vehicle.setDriver(null);
 

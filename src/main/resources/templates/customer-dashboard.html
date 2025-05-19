@@ -165,6 +165,7 @@
 <div class="content">
     <h1 class="page-title">Dashboard</h1>
 
+
     <!-- Dashboard Summary Cards -->
     <div class="dashboard-cards">
         <div class="card">
@@ -209,14 +210,23 @@
                           th:text="${vehicle.status}">ACTIVE</span>
                 </td>
                 <td>
-                    <form th:action="@{/customer/dashboard/remove-from-fleet}" method="post">
-                        <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}" />
-                        <button class="remove-button" type="submit"
-                                onclick="return confirm('Are you sure you want to remove this vehicle from your fleet?')">
+                    <div th:if="${vehicle.status.name() == 'AVAILABLE'}">
+                        <form th:action="@{/customer/dashboard/remove-from-fleet}" method="post">
+                            <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}" />
+                            <button class="remove-button" type="submit"
+                                    onclick="return confirm('Are you sure you want to remove this vehicle from your fleet?')">
+                                Remove
+                            </button>
+                        </form>
+                    </div>
+                    <div th:if="${vehicle.status.name() != 'AVAILABLE'}">
+                        <button class="remove-button" type="button"
+                                onclick="alert('This vehicle cannot be removed unless its status is AVAILABLE.')">
                             Remove
                         </button>
-                    </form>
+                    </div>
                 </td>
+
             </tr>
             </tbody>
         </table>
@@ -253,5 +263,6 @@
         </table>
     </div>
 </div>
+
 </body>
 </html>
