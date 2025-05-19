@@ -121,8 +121,12 @@
   <input type="hidden" name="customerId" th:value="${customerId}">
   <div class="form-group">
     <label th:for="username">Username:</label>
-    <input type="text" th:field="*{username}" required>
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      <input type="text" th:field="*{username}" required>
+      <small th:if="${usernameError}" th:text="${usernameError}" style="color: red;"></small>
+    </div>
   </div>
+
 
   <div class="form-group">
     <label th:for="password">Password:</label>
@@ -131,13 +135,21 @@
 
   <div class="form-group">
     <label th:for="email">Email:</label>
-    <input type="email" th:field="*{email}" required>
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      <input type="email" th:field="*{email}" required>
+      <small th:if="${emailError}" th:text="${emailError}" style="color: red;"></small>
+    </div>
   </div>
+
 
   <div class="form-group">
     <label th:for="licenseNumber">License Number:</label>
-    <input type="text" th:field="*{licenseNumber}">
+    <div style="flex: 1; display: flex; flex-direction: column;">
+      <input type="text" th:field="*{licenseNumber}">
+      <small th:if="${licenseError}" th:text="${licenseError}" style="color: red;"></small>
+    </div>
   </div>
+
 
   <div class="form-group">
     <label th:for="licenseExpiryDate">License Expiry Date:</label>

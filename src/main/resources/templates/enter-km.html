@@ -126,10 +126,12 @@
 
         <form method="post" th:action="@{/driver/dashboard/submit-km}">
             <input type="hidden" name="usageId" th:value="${usage.usageId}" />
-            <label for="endOdometer">End Odometer:</label>
+            <label th:for="endOdometer">End Odometer:</label>
             <input type="number" step="0.1" name="endOdometer" required />
             <button type="submit">Submit KM</button>
         </form>
+        <div id="error-msg" th:if="${error != null}" th:text="${error}" style="color:red; margin-bottom:10px;"></div>
+
     </div>
 
     <div th:if="${usage == null}" class="card">

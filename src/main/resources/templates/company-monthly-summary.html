@@ -308,7 +308,6 @@
                 align-items: stretch;
             }
         }
-        <style>
          * {
              margin: 0;
              padding: 0;
@@ -457,57 +456,57 @@
     <!-- Sayfa Başlığı -->
     <div class="page-header">
         <h1>
-            🚛 Kiralanan Araçlar - Aylık Harcama Özeti
+            🚛 Owned/Leased Vehicles - Monthly Summary
             <span class="badge" th:text="${monthName}">May 2025</span>
         </h1>
     </div>
 
     <!-- Ay/Yıl Filtresi -->
     <div class="filter-section">
-        <h4 style="margin: 0 0 15px 0; color: #2c3e50;">📅 Dönem Seçimi</h4>
+        <h4 style="margin: 0 0 15px 0; color: #2c3e50;">📅 Period Selection</h4>
         <form method="get" class="filter-form">
             <select name="month" required>
-                <option value="01">Ocak</option>
-                <option value="02">Şubat</option>
-                <option value="03">Mart</option>
-                <option value="04">Nisan</option>
-                <option value="05">Mayıs</option>
-                <option value="06">Haziran</option>
-                <option value="07">Temmuz</option>
-                <option value="08">Ağustos</option>
-                <option value="09">Eylül</option>
-                <option value="10">Ekim</option>
-                <option value="11">Kasım</option>
-                <option value="12">Aralık</option>
+                <option value="01">January</option>
+                <option value="02">February</option>
+                <option value="03">March</option>
+                <option value="04">April</option>
+                <option value="05">May</option>
+                <option value="06">June</option>
+                <option value="07">July</option>
+                <option value="08">August</option>
+                <option value="09">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
             </select>
             <input type="number" name="year" th:value="${#dates.year(#dates.createNow())}"
                    min="2020" max="2030" required>
-            <button type="submit" class="filter-btn">🔍 Filtrele</button>
+            <button type="submit" class="filter-btn">🔍 Filter</button>
         </form>
     </div>
 
     <!-- Harcama Özeti Kartları -->
     <div class="summary-cards">
         <div class="expense-card">
-            <h3>💰 Aylık Harcama Özeti</h3>
+            <h3>💰 Monthly Expense Record </h3>
             <div class="expense-item">
-                <span>🔧 Bakım:</span>
+                <span>🔧 Maintenance:</span>
                 <span class="currency" th:text="'₺' + ${#numbers.formatDecimal(expenseData.maintenanceCost, 0, 2)}">₺0.00</span>
             </div>
             <div class="expense-item">
-                <span>🔨 Tamir:</span>
+                <span>🔨 Repair:</span>
                 <span class="currency" th:text="'₺' + ${#numbers.formatDecimal(expenseData.repairCost, 0, 2)}">₺0.00</span>
             </div>
             <div class="expense-item">
-                <span>⛽ Yakıt:</span>
+                <span>⛽ Fuel:</span>
                 <span class="currency" th:text="'₺' + ${#numbers.formatDecimal(expenseData.fuelCost, 0, 2)}">₺0.00</span>
             </div>
             <div class="expense-item">
-                <span>🛡️ Kasko:</span>
+                <span>🛡️ Insurance:</span>
                 <span class="currency" th:text="'₺' + ${#numbers.formatDecimal(expenseData.insuranceCost, 0, 2)}">₺0.00</span>
             </div>
             <div class="expense-item">
-                <span>📊 TOPLAM:</span>
+                <span>📊 TOTAL:</span>
                 <span class="currency" th:text="'₺' + ${#numbers.formatDecimal(expenseData.totalCost, 0, 2)}">₺0.00</span>
             </div>
         </div>
@@ -517,7 +516,7 @@
     <div class="charts-section">
         <!-- Harcama Dağılımı -->
         <div class="chart-container">
-            <h3>📊 Harcama Dağılımı</h3>
+            <h3>📊 Expense Distribution</h3>
             <div class="chart-wrapper">
                 <canvas id="expenseDistributionChart"></canvas>
             </div>
@@ -525,7 +524,7 @@
 
         <!-- Aylık Trend Grafiği -->
         <div class="chart-container trend-chart-container">
-            <h3>📈 Son 6 Ay Harcama Trendi</h3>
+            <h3>📈 Trend of Last 6 Months Expenses</h3>
             <div class="chart-wrapper trend-chart-wrapper">
                 <canvas id="monthlyTrendChart"></canvas>
             </div>
@@ -535,20 +534,20 @@
     <!-- Araç Bazında Harcama Tablosu -->
     <div class="table-section">
         <div class="table-header">
-            <h3>🚗 Araç Bazında Harcama Detayı</h3>
+            <h3>🚗 Expense Detail Based On Vehicles</h3>
         </div>
         <div class="table-responsive">
             <table class="expense-table">
                 <thead>
                 <tr>
-                    <th>🚙 Plaka</th>
-                    <th>🏭 Marka/Model</th>
-                    <th>📅 Yıl</th>
-                    <th>🔧 Bakım</th>
-                    <th>🔨 Tamir</th>
-                    <th>⛽ Yakıt</th>
-                    <th>🛡️ Kasko</th>
-                    <th>💎 Toplam</th>
+                    <th>🚙 Plate Num</th>
+                    <th>🏭 Brand/Model</th>
+                    <th>📅 Year</th>
+                    <th>🔧 Maintenance</th>
+                    <th>🔨 Repair</th>
+                    <th>⛽ Fuel</th>
+                    <th>🛡️ Insurance</th>
+                    <th>💎 Total</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -564,7 +563,7 @@
                 </tr>
                 <tr th:if="${#lists.isEmpty(vehicleExpenses)}">
                     <td colspan="8" class="no-data">
-                        📭 Bu ay için kiralanan araçlarda harcama bulunmamaktadır.
+                        📭 No vehicle expenses being found in the database for that month
                     </td>
                 </tr>
                 </tbody>
@@ -581,7 +580,7 @@
     new Chart(distributionCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Bakım', 'Tamir', 'Yakıt', 'Kasko'],
+            labels: ['Maintenance', 'Repair', 'Fuel', 'Insurance'],
             datasets: [{
                 data: [
                     expenseData.maintenanceCost,
@@ -634,7 +633,7 @@
             labels: chartData.map(item => item.month),
             datasets: [
                 {
-                    label: 'Bakım',
+                    label: 'Maintenance',
                     data: chartData.map(item => item.maintenance),
                     borderColor: '#FF6384',
                     backgroundColor: 'rgba(255, 99, 132, 0.1)',
@@ -643,7 +642,7 @@
                     borderWidth: 3
                 },
                 {
-                    label: 'Tamir',
+                    label: 'Repair',
                     data: chartData.map(item => item.repair),
                     borderColor: '#36A2EB',
                     backgroundColor: 'rgba(54, 162, 235, 0.1)',
@@ -652,7 +651,7 @@
                     borderWidth: 3
                 },
                 {
-                    label: 'Yakıt',
+                    label: 'Fuel',
                     data: chartData.map(item => item.fuel),
                     borderColor: '#FFCE56',
                     backgroundColor: 'rgba(255, 206, 86, 0.1)',
@@ -661,7 +660,7 @@
                     borderWidth: 3
                 },
                 {
-                    label: 'Toplam',
+                    label: 'Total',
                     data: chartData.map(item => item.total),
                     borderColor: '#4BC0C0',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',

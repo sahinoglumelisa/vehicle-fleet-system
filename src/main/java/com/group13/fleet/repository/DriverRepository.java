@@ -27,4 +27,9 @@ public interface DriverRepository extends JpaRepository<Driver, Integer> {
                                            @Param("isActive") boolean isActive);
 
     List<Driver> findDriversByCompanyId(Integer companyId);
+
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+    boolean existsByLicenseNumber(String licenseNumber);
+
 }

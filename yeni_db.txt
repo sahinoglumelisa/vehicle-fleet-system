@@ -1,0 +1,1246 @@
+-- DROP TABLES AND TYPES
+DROP TABLE IF EXISTS expense_reports, expense_tracker, reports, vehicle_usage, fuel_consumption, services, vehicles,
+drivers, customers, sys_admins, fleet_management_sys, users CASCADE;
+
+DROP TYPE IF EXISTS vehicle_status, ownership_type, vehicle_type, service_type, report_type, expense_type;
+
+-- ENUM TYPES
+CREATE TYPE vehicle_status AS ENUM ('AVAILABLE', 'ASSIGNED', 'IN_SERVICE', 'OUT_OF_ORDER');
+CREATE TYPE ownership_type AS ENUM ('OWNED', 'LEASED');
+CREATE TYPE vehicle_type AS ENUM ('SEDAN', 'SUV', 'TRUCK', 'VAN');
+CREATE TYPE service_type AS ENUM ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE', 'REPAIR');
+CREATE TYPE report_type AS ENUM ('VEHICLE_USAGE', 'FUEL_CONSUMPTION', 'MAINTENANCE_COST', 'INSURANCE_COST', 'REPAIR_COST', 'TOTAL_COST', 'PREDICTION');
+CREATE TYPE expense_type AS ENUM ('FUEL', 'MAINTENANCE', 'INSURANCE', 'REPAIR', 'TOTAL');
+
+-- TABLES
+
+CREATE TABLE sys_admins (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE customers (
+    company_id SERIAL PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE
+);
+
+
+CREATE TABLE drivers (
+    user_id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES customers(company_id),
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    license_number VARCHAR(50),
+    license_expiry_date DATE NOT NULL,
+    is_active BOOLEAN NOT NULL
+);
+
+CREATE TABLE vehicles (
+    vehicle_id SERIAL PRIMARY KEY,
+    company_id INTEGER REFERENCES customers(company_id),
+    plate_number VARCHAR(20) NOT NULL UNIQUE,
+    brand VARCHAR(50) NOT NULL,
+    model VARCHAR(50) NOT NULL,
+    year INTEGER NOT NULL,
+	type vehicle_type NOT NULL DEFAULT 'SEDAN',
+	status vehicle_status NOT NULL DEFAULT 'AVAILABLE',
+	ownership_type ownership_type NOT NULL DEFAULT 'OWNED',
+    current_odometer DOUBLE PRECISION NOT NULL,
+    previous_month_odometer DOUBLE PRECISION NOT NULL,
+    driver_id INTEGER REFERENCES drivers(user_id)
+);
+
+CREATE TABLE services (
+    service_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER NOT NULL REFERENCES vehicles(vehicle_id),
+    service_date DATE NOT NULL,
+    service_type service_type NOT NULL,
+    description TEXT,
+    cost DOUBLE PRECISION NOT NULL,
+    is_covered_by_insurance BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE fuel_consumption (
+    fuel_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER NOT NULL REFERENCES vehicles(vehicle_id),
+    driver_id INTEGER NOT NULL REFERENCES drivers(user_id),
+    date DATE NOT NULL,
+    liters DOUBLE PRECISION NOT NULL,
+    cost DOUBLE PRECISION NOT NULL,
+    odometer_reading DOUBLE PRECISION NOT NULL
+);
+
+CREATE TABLE vehicle_usage (
+    usage_id SERIAL PRIMARY KEY,
+    vehicle_id INTEGER NOT NULL REFERENCES vehicles(vehicle_id),
+    driver_id INTEGER NOT NULL REFERENCES drivers(user_id),
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    start_odometer DOUBLE PRECISION NOT NULL,
+    end_odometer DOUBLE PRECISION NOT NULL,
+    purpose TEXT,
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE reports (
+    report_id SERIAL PRIMARY KEY,
+    generated_date DATE NOT NULL,
+    type report_type NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    data TEXT
+);
+
+CREATE TABLE expense_tracker (
+    tracker_id SERIAL PRIMARY KEY,
+    company_id INTEGER NOT NULL REFERENCES customers(company_id),
+    expense_type expense_type NOT NULL
+);
+
+CREATE TABLE expense_reports (
+    tracker_id INTEGER REFERENCES expense_tracker(tracker_id),
+    report_id INTEGER REFERENCES reports(report_id),
+    PRIMARY KEY (tracker_id, report_id)
+);
+
+-- SAMPLE DATA
+INSERT INTO sys_admins (username, password, email)
+VALUES ('admin_master', 'Admin1234!', 'admin@fleetmanager.com');
+
+INSERT INTO customers (username, password, email)
+VALUES 
+('eco_transport', 'EcoPass123!', 'contact@ecotransport.com'),
+('rapid_logistics', 'Rapid456!', 'info@rapidlogistics.com'),
+('city_movers', 'City789!', 'support@citymovers.com');
+
+-- eco_transport (company_id = 1)
+INSERT INTO drivers (company_id, username, password, email, license_number, license_expiry_date, is_active)
+VALUES 
+(1, 'driver_eco1', 'Driver123!', 'eco1@fleet.com', 'ECO123456', '2027-06-30', true),
+(1, 'driver_eco2', 'Driver456!', 'eco2@fleet.com', 'ECO789012', '2026-04-15', true),
+(1, 'driver_eco3', 'Driver789!', 'eco3@fleet.com', 'ECO345678', '2025-12-01', false);
+
+-- rapid_logistics (company_id = 2)
+INSERT INTO drivers (company_id, username, password, email, license_number, license_expiry_date, is_active)
+VALUES 
+(2, 'driver_rapid1', 'Rapid123!', 'rapid1@fleet.com', 'RAP123456', '2027-01-10', true),
+(2, 'driver_rapid2', 'Rapid456!', 'rapid2@fleet.com', 'RAP789012', '2026-09-22', true),
+(2, 'driver_rapid3', 'Rapid789!', 'rapid3@fleet.com', 'RAP345678', '2025-11-30', false);
+
+-- city_movers (company_id = 3)
+INSERT INTO drivers (company_id, username, password, email, license_number, license_expiry_date, is_active)
+VALUES 
+(3, 'driver_city1', 'City123!', 'city1@fleet.com', 'CIT123456', '2026-07-15', true),
+(3, 'driver_city2', 'City456!', 'city2@fleet.com', 'CIT789012', '2025-05-20', false),
+(3, 'driver_city3', 'City789!', 'city3@fleet.com', 'CIT345678', '2027-02-28', true);
+
+-- ECO_TRANSPORT (company_id = 1, aktif driver: user_id = 3)
+INSERT INTO vehicles (company_id, plate_number, brand, model, year, type, status, ownership_type, current_odometer, previous_month_odometer, driver_id)
+VALUES
+(1, '34ECO101', 'Renault', 'Clio', 2020, 'SEDAN', 'ASSIGNED', 'OWNED', 48000, 47000, 3),
+(1, '34ECO102', 'Ford', 'Transit', 2019, 'VAN', 'AVAILABLE', 'LEASED', 62000, 61000, NULL),
+(1, '34ECO103', 'Toyota', 'Corolla', 2021, 'SEDAN', 'IN_SERVICE', 'OWNED', 33000, 32000, NULL),
+(1, '34ECO104', 'Dacia', 'Dokker', 2022, 'TRUCK', 'AVAILABLE', 'LEASED', 19000, 18000, NULL),
+(1, '34ECO105', 'Hyundai', 'i20', 2018, 'SUV', 'OUT_OF_ORDER', 'OWNED', 72000, 71000, NULL);
+
+-- RAPID_LOGISTICS (company_id = 2, aktif driver: user_id = 6)
+INSERT INTO vehicles (company_id, plate_number, brand, model, year, type, status, ownership_type, current_odometer, previous_month_odometer, driver_id)
+VALUES
+(2, '35RPD201', 'Mercedes', 'Sprinter', 2022, 'VAN', 'ASSIGNED', 'OWNED', 27000, 26000, 6),
+(2, '35RPD202', 'Peugeot', 'Boxer', 2020, 'TRUCK', 'AVAILABLE', 'LEASED', 45000, 44000, NULL),
+(2, '35RPD203', 'Fiat', 'Doblo', 2018, 'SUV', 'OUT_OF_ORDER', 'OWNED', 73000, 72000, NULL),
+(2, '35RPD204', 'Ford', 'Courier', 2023, 'SEDAN', 'IN_SERVICE', 'LEASED', 12000, 11500, NULL),
+(2, '35RPD205', 'Iveco', 'Daily', 2019, 'VAN', 'AVAILABLE', 'OWNED', 51000, 50000, NULL);
+
+-- CITY_MOVERS (company_id = 3, aktif driver: user_id = 8)
+INSERT INTO vehicles (company_id, plate_number, brand, model, year, type, status, ownership_type, current_odometer, previous_month_odometer, driver_id)
+VALUES
+(3, '06CTY301', 'Volkswagen', 'Caddy', 2021, 'VAN', 'ASSIGNED', 'LEASED', 39000, 38000, 8),
+(3, '06CTY302', 'Opel', 'Combo', 2019, 'TRUCK', 'AVAILABLE', 'OWNED', 58000, 57000, NULL),
+(3, '06CTY303', 'Citroen', 'Berlingo', 2020, 'SUV', 'IN_SERVICE', 'OWNED', 51000, 50000, NULL),
+(3, '06CTY304', 'Renault', 'Kangoo', 2017, 'VAN', 'OUT_OF_ORDER', 'OWNED', 85000, 84000, NULL),
+(3, '06CTY305', 'Toyota', 'Proace', 2022, 'TRUCK', 'AVAILABLE', 'LEASED', 22000, 21000, NULL);
+
+-- VEHICLE_ID = 1
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(1, '2023-10-10', 'REGULAR_MAINTENANCE', 'Yağ ve filtre değişimi', 750.00, false),
+(1, '2024-03-20', 'TIRE_CHANGE', 'Yaz lastiklerine geçiş', 1200.00, false),
+(1, '2025-01-12', 'REPAIR', 'Ön tampon hasarı onarımı', 2200.00, true);
+
+-- VEHICLE_ID = 2
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(2, '2023-11-05', 'PART_REPLACEMENT', 'Fren balataları değişti', 1450.00, false),
+(2, '2024-04-02', 'REGULAR_MAINTENANCE', 'Periyodik bakım', 950.00, false),
+(2, '2025-02-10', 'TIRE_CHANGE', 'Kar lastikleri takıldı', 1300.00, false);
+
+-- VEHICLE_ID = 3 (IN_SERVICE)
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(3, '2023-09-18', 'REGULAR_MAINTENANCE', 'Motor kontrolü ve yağ değişimi', 800.00, false),
+(3, '2024-08-10', 'REPAIR', 'Motor titreşim sorunu giderildi', 2600.00, true),
+(3, '2025-05-17', 'PART_REPLACEMENT', 'Turbo değişimi – şu an serviste', 5800.00, true);
+
+-- VEHICLE_ID = 4
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(4, '2023-06-12', 'TIRE_CHANGE', 'Arka sağ lastik değişimi', 500.00, false),
+(4, '2024-01-25', 'REPAIR', 'Far sistemi onarımı', 1350.00, true),
+(4, '2025-03-18', 'REGULAR_MAINTENANCE', '100.000 km bakımı', 1900.00, false);
+
+-- VEHICLE_ID = 5
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(5, '2023-12-30', 'PART_REPLACEMENT', 'Akü değişimi', 980.00, false),
+(5, '2024-05-05', 'TIRE_CHANGE', '4 lastik değişimi', 1800.00, false),
+(5, '2025-04-15', 'REPAIR', 'Kaporta düzeltme ve boya', 2200.00, true);
+
+-- VEHICLE_ID = 6
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(6, '2023-08-22', 'REGULAR_MAINTENANCE', 'Periyodik bakım', 850.00, false),
+(6, '2024-03-19', 'REPAIR', 'Kapı menteşesi sorunu giderildi', 950.00, false),
+(6, '2025-01-20', 'TIRE_CHANGE', 'Arka lastikler değişti', 1100.00, false);
+
+-- VEHICLE_ID = 7
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(7, '2023-09-10', 'PART_REPLACEMENT', 'Fren diski değişimi', 1300.00, false),
+(7, '2024-06-12', 'REGULAR_MAINTENANCE', 'Motor yağı ve filtre değişimi', 800.00, false),
+(7, '2025-03-05', 'REPAIR', 'Klima arızası giderildi', 950.00, true);
+
+-- VEHICLE_ID = 8
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(8, '2023-07-17', 'TIRE_CHANGE', 'Ön lastik değişimi', 600.00, false),
+(8, '2024-10-01', 'PART_REPLACEMENT', 'Debriyaj seti değişti', 2300.00, true),
+(8, '2025-02-15', 'REGULAR_MAINTENANCE', '75.000 km bakımı', 1500.00, false);
+
+-- VEHICLE_ID = 9 (IN_SERVICE)
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(9, '2023-11-25', 'REGULAR_MAINTENANCE', 'Yıllık kontrol', 900.00, false),
+(9, '2024-09-03', 'REPAIR', 'Arka tampon düzeltmesi', 1800.00, true),
+(9, '2025-05-17', 'PART_REPLACEMENT', 'Şanzıman değişimi – şu an serviste', 6200.00, true);
+
+-- VEHICLE_ID = 10
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(10, '2023-06-14', 'TIRE_CHANGE', 'Kış lastiklerine geçiş', 1100.00, false),
+(10, '2024-02-08', 'REGULAR_MAINTENANCE', 'Periyodik bakım', 950.00, false),
+(10, '2025-04-10', 'REPAIR', 'Far ayar sensörü değişti', 1600.00, true);
+
+-- VEHICLE_ID = 11
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(11, '2023-10-28', 'REGULAR_MAINTENANCE', 'Yağ ve hava filtresi değişimi', 780.00, false),
+(11, '2024-03-15', 'REPAIR', 'Egzoz sistemi onarımı', 2200.00, true),
+(11, '2025-02-20', 'TIRE_CHANGE', 'Lastik rotasyonu ve balans', 950.00, false);
+
+-- VEHICLE_ID = 12
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(12, '2023-07-30', 'TIRE_CHANGE', 'Ön iki lastik değişimi', 1000.00, false),
+(12, '2024-06-05', 'PART_REPLACEMENT', 'Silecek motoru değişimi', 450.00, false),
+(12, '2025-03-10', 'REGULAR_MAINTENANCE', 'Araç içi genel bakım', 1250.00, false);
+
+-- VEHICLE_ID = 13 (IN_SERVICE)
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(13, '2023-09-11', 'REGULAR_MAINTENANCE', 'Periyodik kontrol', 880.00, false),
+(13, '2024-11-14', 'REPAIR', 'Diferansiyel tamiri', 3100.00, true),
+(13, '2025-05-17', 'PART_REPLACEMENT', 'Direksiyon kutusu değişimi – şu an serviste', 4700.00, true);
+
+-- VEHICLE_ID = 14
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(14, '2023-05-05', 'TIRE_CHANGE', 'Lastik patlaması sonrası değişim', 600.00, false),
+(14, '2024-04-19', 'PART_REPLACEMENT', 'Marş motoru değişti', 1600.00, true),
+(14, '2025-03-01', 'REGULAR_MAINTENANCE', 'Araç genel kontrol', 950.00, false);
+
+-- VEHICLE_ID = 15
+INSERT INTO services (vehicle_id, service_date, service_type, description, cost, is_covered_by_insurance)
+VALUES 
+(15, '2023-08-09', 'REGULAR_MAINTENANCE', 'Yağ, filtre, buji değişimi', 1120.00, false),
+(15, '2024-09-27', 'REPAIR', 'Motor arızası giderildi', 2800.00, true),
+(15, '2025-04-12', 'TIRE_CHANGE', '4 mevsim lastik seti takıldı', 1800.00, false);
+
+
+
+
+
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 1, '2024-01-01', 55.2, 2195.86, 32320);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 2, '2024-02-01', 47.5, 1869.6, 34081);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 3, '2024-03-01', 52.8, 2101.44, 35317);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 1, '2024-04-01', 58.8, 2189.71, 36687);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 2, '2024-05-01', 68.1, 2551.03, 38099);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 3, '2024-06-01', 50.0, 1977.5, 39640);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 1, '2024-07-01', 52.8, 2152.13, 40908);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 2, '2024-08-01', 48.6, 1817.64, 42699);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 3, '2024-09-01', 68.8, 2471.98, 44283);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 1, '2024-10-01', 47.4, 1963.31, 45576);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 2, '2024-11-01', 42.8, 1609.71, 46783);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (1, 3, '2024-12-01', 59.9, 2236.67, 48477);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 1, '2024-01-01', 58.8, 2205.0, 33530);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 2, '2024-02-01', 40.4, 1529.14, 34978);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 3, '2024-03-01', 41.9, 1730.47, 36347);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 1, '2024-04-01', 49.9, 2035.92, 38147);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 2, '2024-05-01', 50.1, 1972.44, 39438);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 3, '2024-06-01', 53.6, 2102.19, 40741);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 1, '2024-07-01', 47.7, 1841.7, 41992);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 2, '2024-08-01', 58.9, 2399.59, 43384);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 3, '2024-09-01', 67.6, 2701.3, 44649);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 1, '2024-10-01', 49.5, 1928.03, 45854);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 2, '2024-11-01', 58.4, 2109.99, 47626);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (2, 3, '2024-12-01', 54.8, 2278.58, 48881);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 1, '2024-01-01', 56.3, 1982.89, 34591);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 2, '2024-02-01', 54.7, 2269.5, 35902);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 3, '2024-03-01', 55.1, 1994.62, 37521);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 1, '2024-04-01', 50.2, 2020.55, 39314);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 2, '2024-05-01', 51.1, 1888.15, 40679);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 3, '2024-06-01', 52.9, 2009.14, 42430);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 1, '2024-07-01', 52.9, 1876.89, 43703);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 2, '2024-08-01', 66.5, 2523.68, 45356);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 3, '2024-09-01', 44.9, 1580.93, 46964);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 1, '2024-10-01', 42.7, 1559.4, 48301);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 2, '2024-11-01', 47.4, 1921.6, 50060);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (3, 3, '2024-12-01', 66.8, 2525.04, 51655);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 1, '2024-01-01', 63.7, 2406.59, 35365);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 2, '2024-02-01', 69.4, 2824.58, 36585);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 3, '2024-03-01', 47.4, 1708.77, 37951);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 1, '2024-04-01', 64.5, 2612.25, 39744);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 2, '2024-05-01', 52.6, 2166.07, 41223);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 3, '2024-06-01', 42.5, 1673.65, 42747);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 1, '2024-07-01', 51.8, 2032.63, 44155);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 2, '2024-08-01', 68.7, 2409.31, 45437);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 3, '2024-09-01', 43.2, 1551.31, 47048);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 1, '2024-10-01', 56.8, 1995.95, 48467);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 2, '2024-11-01', 65.8, 2310.9, 50024);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (4, 3, '2024-12-01', 69.5, 2490.18, 51450);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 1, '2024-01-01', 40.3, 1649.48, 36775);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 2, '2024-02-01', 56.8, 2228.83, 38256);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 3, '2024-03-01', 66.5, 2538.31, 39986);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 1, '2024-04-01', 41.9, 1698.21, 41497);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 2, '2024-05-01', 58.1, 2429.16, 42953);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 3, '2024-06-01', 61.6, 2277.35, 44664);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 1, '2024-07-01', 52.9, 1971.58, 46360);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 2, '2024-08-01', 49.1, 1943.87, 48090);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 3, '2024-09-01', 49.9, 2017.96, 49294);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 1, '2024-10-01', 62.1, 2531.2, 50685);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 2, '2024-11-01', 65.3, 2345.58, 52046);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (5, 3, '2024-12-01', 66.2, 2462.64, 53782);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 4, '2024-01-01', 57.1, 2251.45, 26460);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 5, '2024-02-01', 60.3, 2112.31, 27930);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 6, '2024-03-01', 41.4, 1465.97, 29091);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 4, '2024-04-01', 63.6, 2615.23, 30147);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 5, '2024-05-01', 68.5, 2702.33, 31555);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 6, '2024-06-01', 50.4, 2053.8, 32947);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 4, '2024-07-01', 40.8, 1509.19, 33961);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 5, '2024-08-01', 52.3, 2007.27, 35235);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 6, '2024-09-01', 47.2, 1654.83, 36820);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 4, '2024-10-01', 67.5, 2806.65, 38342);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 5, '2024-11-01', 51.4, 1919.28, 39579);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (6, 6, '2024-12-01', 57.3, 2110.93, 40816);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 4, '2024-01-01', 54.3, 2200.24, 28525);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 5, '2024-02-01', 64.9, 2684.91, 30091);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 6, '2024-03-01', 41.4, 1661.8, 31326);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 4, '2024-04-01', 56.0, 2177.28, 32585);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 5, '2024-05-01', 61.0, 2188.07, 33591);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 6, '2024-06-01', 44.7, 1859.07, 34930);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 4, '2024-07-01', 57.3, 2402.02, 36387);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 5, '2024-08-01', 45.6, 1867.32, 37422);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 6, '2024-09-01', 41.7, 1745.15, 38837);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 4, '2024-10-01', 51.3, 1872.45, 40211);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 5, '2024-11-01', 69.3, 2514.2, 41801);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (7, 6, '2024-12-01', 44.3, 1792.82, 43078);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 4, '2024-01-01', 69.4, 2483.83, 30392);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 5, '2024-02-01', 47.9, 1780.92, 31491);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 6, '2024-03-01', 50.4, 1896.05, 32613);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 4, '2024-04-01', 58.6, 2190.47, 33681);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 5, '2024-05-01', 58.3, 2093.55, 34987);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 6, '2024-06-01', 48.9, 1918.35, 36508);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 4, '2024-07-01', 65.6, 2315.02, 37734);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 5, '2024-08-01', 42.0, 1530.48, 38878);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 6, '2024-09-01', 62.4, 2474.78, 40397);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 4, '2024-10-01', 50.7, 1994.54, 41725);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 5, '2024-11-01', 42.0, 1716.96, 43020);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (8, 6, '2024-12-01', 42.7, 1557.27, 44033);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 4, '2024-01-01', 49.4, 1757.65, 31273);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 5, '2024-02-01', 68.0, 2585.36, 32606);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 6, '2024-03-01', 40.8, 1597.73, 33929);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 4, '2024-04-01', 42.4, 1537.0, 35330);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 5, '2024-05-01', 57.2, 2312.6, 36460);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 6, '2024-06-01', 55.1, 2023.27, 37740);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 4, '2024-07-01', 47.7, 1958.56, 39102);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 5, '2024-08-01', 50.8, 2110.74, 40190);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 6, '2024-09-01', 52.4, 2173.03, 41422);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 4, '2024-10-01', 41.0, 1602.69, 42945);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 5, '2024-11-01', 64.3, 2681.31, 44338);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (9, 6, '2024-12-01', 62.6, 2395.7, 45758);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 4, '2024-01-01', 48.9, 1746.71, 33116);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 5, '2024-02-01', 40.7, 1513.23, 34146);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 6, '2024-03-01', 61.5, 2390.5, 35744);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 4, '2024-04-01', 59.9, 2206.72, 36809);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 5, '2024-05-01', 41.0, 1642.05, 38350);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 6, '2024-06-01', 48.8, 1999.34, 39927);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 4, '2024-07-01', 59.3, 2133.61, 41017);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 5, '2024-08-01', 44.1, 1631.26, 42141);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 6, '2024-09-01', 47.2, 1786.99, 43493);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 4, '2024-10-01', 47.7, 1850.28, 44925);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 5, '2024-11-01', 64.4, 2648.77, 46200);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (10, 6, '2024-12-01', 44.7, 1838.06, 47759);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 7, '2024-01-01', 46.1, 1923.29, 29531);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 8, '2024-02-01', 62.8, 2450.46, 30655);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 9, '2024-03-01', 65.8, 2516.19, 32321);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 7, '2024-04-01', 55.3, 2270.06, 33460);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 8, '2024-05-01', 64.5, 2621.92, 35000);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 9, '2024-06-01', 62.1, 2552.93, 36503);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 7, '2024-07-01', 65.8, 2447.76, 37757);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 8, '2024-08-01', 49.3, 1843.82, 39405);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 9, '2024-09-01', 44.6, 1870.08, 41065);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 7, '2024-10-01', 50.9, 1982.05, 42175);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 8, '2024-11-01', 67.3, 2463.18, 43465);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (11, 9, '2024-12-01', 44.3, 1774.66, 44673);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 7, '2024-01-01', 42.7, 1756.25, 30539);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 8, '2024-02-01', 58.4, 2099.48, 32028);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 9, '2024-03-01', 53.4, 1894.1, 33706);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 7, '2024-04-01', 41.0, 1507.98, 35193);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 8, '2024-05-01', 57.5, 2031.47, 36399);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 9, '2024-06-01', 51.2, 2008.58, 37584);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 7, '2024-07-01', 57.1, 2019.63, 39195);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 8, '2024-08-01', 55.5, 2250.52, 40661);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 9, '2024-09-01', 60.7, 2228.3, 41794);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 7, '2024-10-01', 69.1, 2798.55, 43402);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 8, '2024-11-01', 40.5, 1428.03, 44567);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (12, 9, '2024-12-01', 68.4, 2502.76, 45909);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 7, '2024-01-01', 41.9, 1651.7, 32118);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 8, '2024-02-01', 41.7, 1625.47, 33283);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 9, '2024-03-01', 63.1, 2323.34, 34540);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 7, '2024-04-01', 65.4, 2612.08, 36058);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 8, '2024-05-01', 48.6, 1875.47, 37358);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 9, '2024-06-01', 62.6, 2229.19, 38500);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 7, '2024-07-01', 57.7, 2158.56, 40163);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 8, '2024-08-01', 62.9, 2216.6, 41506);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 9, '2024-09-01', 63.0, 2329.74, 42825);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 7, '2024-10-01', 55.3, 2193.2, 44403);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 8, '2024-11-01', 65.6, 2424.58, 45619);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (13, 9, '2024-12-01', 68.7, 2501.37, 46731);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 7, '2024-01-01', 49.8, 1887.42, 33118);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 8, '2024-02-01', 61.8, 2541.22, 34600);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 9, '2024-03-01', 51.4, 1832.92, 35973);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 7, '2024-04-01', 65.7, 2481.49, 37595);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 8, '2024-05-01', 46.0, 1842.3, 39141);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 9, '2024-06-01', 64.2, 2578.91, 40649);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 7, '2024-07-01', 45.5, 1669.39, 42332);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 8, '2024-08-01', 50.1, 1855.2, 43613);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 9, '2024-09-01', 61.3, 2459.36, 44913);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 7, '2024-10-01', 43.8, 1628.05, 46492);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 8, '2024-11-01', 44.4, 1757.35, 47618);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (14, 9, '2024-12-01', 64.5, 2578.71, 48794);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 7, '2024-01-01', 44.3, 1859.27, 35477);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 8, '2024-02-01', 62.3, 2229.72, 36993);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 9, '2024-03-01', 58.4, 2048.09, 38155);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 7, '2024-04-01', 52.1, 1967.82, 39631);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 8, '2024-05-01', 57.0, 2390.58, 41180);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 9, '2024-06-01', 57.8, 2267.49, 42425);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 7, '2024-07-01', 65.8, 2375.38, 43661);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 8, '2024-08-01', 61.0, 2290.55, 44830);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 9, '2024-09-01', 46.7, 1944.59, 46323);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 7, '2024-10-01', 62.8, 2630.06, 47752);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 8, '2024-11-01', 70.0, 2900.8, 49111);
+INSERT INTO fuel_consumption (vehicle_id, driver_id, date, liters, cost, odometer_reading)
+VALUES (15, 9, '2024-12-01', 52.9, 2070.51, 50627);
+
+
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 1, '2024-01-01', '2024-01-28', 35610, 36561, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 2, '2024-02-01', '2024-02-28', 36561, 37987, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 3, '2024-03-01', '2024-03-28', 37987, 38933, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 1, '2024-04-01', '2024-04-28', 38933, 40286, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 2, '2024-05-01', '2024-05-28', 40286, 41741, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 3, '2024-06-01', '2024-06-28', 41741, 42650, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 1, '2024-07-01', '2024-07-28', 42650, 43935, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 2, '2024-08-01', '2024-08-28', 43935, 45190, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 3, '2024-09-01', '2024-09-28', 45190, 46301, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 1, '2024-10-01', '2024-10-28', 46301, 48069, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 2, '2024-11-01', '2024-11-28', 48069, 49829, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (1, 3, '2024-12-01', '2024-12-28', 49829, 51485, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 1, '2024-01-01', '2024-01-28', 31585, 32548, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 2, '2024-02-01', '2024-02-28', 32548, 33648, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 3, '2024-03-01', '2024-03-28', 33648, 34781, 'Depodan dağıtım', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 1, '2024-04-01', '2024-04-28', 34781, 36328, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 2, '2024-05-01', '2024-05-28', 36328, 38100, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 3, '2024-06-01', '2024-06-28', 38100, 39469, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 1, '2024-07-01', '2024-07-28', 39469, 40651, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 2, '2024-08-01', '2024-08-28', 40651, 42117, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 3, '2024-09-01', '2024-09-28', 42117, 43695, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 1, '2024-10-01', '2024-10-28', 43695, 44644, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 2, '2024-11-01', '2024-11-28', 44644, 45915, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (2, 3, '2024-12-01', '2024-12-28', 45915, 47220, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 1, '2024-01-01', '2024-01-28', 28634, 29673, 'Teslimat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 2, '2024-02-01', '2024-02-28', 29673, 30695, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 3, '2024-03-01', '2024-03-28', 30695, 31875, 'Kontrol sürüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 1, '2024-04-01', '2024-04-28', 31875, 33450, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 2, '2024-05-01', '2024-05-28', 33450, 35120, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 3, '2024-06-01', '2024-06-28', 35120, 36331, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 1, '2024-07-01', '2024-07-28', 36331, 37611, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 2, '2024-08-01', '2024-08-28', 37611, 39049, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 3, '2024-09-01', '2024-09-28', 39049, 40279, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 1, '2024-10-01', '2024-10-28', 40279, 41420, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 2, '2024-11-01', '2024-11-28', 41420, 42648, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (3, 3, '2024-12-01', '2024-12-28', 42648, 43654, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 1, '2024-01-01', '2024-01-28', 30923, 32020, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 2, '2024-02-01', '2024-02-28', 32020, 33019, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 3, '2024-03-01', '2024-03-28', 33019, 34092, 'Şehir içi tur', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 1, '2024-04-01', '2024-04-28', 34092, 35597, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 2, '2024-05-01', '2024-05-28', 35597, 37018, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 3, '2024-06-01', '2024-06-28', 37018, 38162, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 1, '2024-07-01', '2024-07-28', 38162, 39530, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 2, '2024-08-01', '2024-08-28', 39530, 40827, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 3, '2024-09-01', '2024-09-28', 40827, 42587, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 1, '2024-10-01', '2024-10-28', 42587, 43777, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 2, '2024-11-01', '2024-11-28', 43777, 44935, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (4, 3, '2024-12-01', '2024-12-28', 44935, 46195, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 1, '2024-01-01', '2024-01-28', 28421, 29497, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 2, '2024-02-01', '2024-02-28', 29497, 31075, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 3, '2024-03-01', '2024-03-28', 31075, 32050, 'Teslimat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 1, '2024-04-01', '2024-04-28', 32050, 32982, 'Şehir içi tur', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 2, '2024-05-01', '2024-05-28', 32982, 34015, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 3, '2024-06-01', '2024-06-28', 34015, 35487, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 1, '2024-07-01', '2024-07-28', 35487, 36941, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 2, '2024-08-01', '2024-08-28', 36941, 38421, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 3, '2024-09-01', '2024-09-28', 38421, 39687, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 1, '2024-10-01', '2024-10-28', 39687, 40845, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 2, '2024-11-01', '2024-11-28', 40845, 42019, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (5, 3, '2024-12-01', '2024-12-28', 42019, 43678, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 4, '2024-01-01', '2024-01-28', 33163, 34127, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 5, '2024-02-01', '2024-02-28', 34127, 35189, 'Kontrol sürüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 6, '2024-03-01', '2024-03-28', 35189, 36976, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 4, '2024-04-01', '2024-04-28', 36976, 38562, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 5, '2024-05-01', '2024-05-28', 38562, 40065, 'Kontrol sürüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 6, '2024-06-01', '2024-06-28', 40065, 41784, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 4, '2024-07-01', '2024-07-28', 41784, 43106, 'Teslimat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 5, '2024-08-01', '2024-08-28', 43106, 44562, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 6, '2024-09-01', '2024-09-28', 44562, 46206, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 4, '2024-10-01', '2024-10-28', 46206, 47285, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 5, '2024-11-01', '2024-11-28', 47285, 48730, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (6, 6, '2024-12-01', '2024-12-28', 48730, 50135, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 4, '2024-01-01', '2024-01-28', 28255, 29783, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 5, '2024-02-01', '2024-02-28', 29783, 31258, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 6, '2024-03-01', '2024-03-28', 31258, 32705, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 4, '2024-04-01', '2024-04-28', 32705, 34207, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 5, '2024-05-01', '2024-05-28', 34207, 35688, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 6, '2024-06-01', '2024-06-28', 35688, 37262, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 4, '2024-07-01', '2024-07-28', 37262, 39062, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 5, '2024-08-01', '2024-08-28', 39062, 40111, 'Kontrol sürüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 6, '2024-09-01', '2024-09-28', 40111, 41266, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 4, '2024-10-01', '2024-10-28', 41266, 42465, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 5, '2024-11-01', '2024-11-28', 42465, 44184, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (7, 6, '2024-12-01', '2024-12-28', 44184, 45620, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 4, '2024-01-01', '2024-01-28', 33111, 34091, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 5, '2024-02-01', '2024-02-28', 34091, 35455, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 6, '2024-03-01', '2024-03-28', 35455, 36755, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 4, '2024-04-01', '2024-04-28', 36755, 38260, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 5, '2024-05-01', '2024-05-28', 38260, 39889, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 6, '2024-06-01', '2024-06-28', 39889, 40885, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 4, '2024-07-01', '2024-07-28', 40885, 42642, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 5, '2024-08-01', '2024-08-28', 42642, 43591, 'Şehir içi tur', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 6, '2024-09-01', '2024-09-28', 43591, 45126, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 4, '2024-10-01', '2024-10-28', 45126, 46777, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 5, '2024-11-01', '2024-11-28', 46777, 48365, 'Şehir içi tur', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (8, 6, '2024-12-01', '2024-12-28', 48365, 50008, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 4, '2024-01-01', '2024-01-28', 33001, 34684, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 5, '2024-02-01', '2024-02-28', 34684, 36310, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 6, '2024-03-01', '2024-03-28', 36310, 37989, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 4, '2024-04-01', '2024-04-28', 37989, 39280, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 5, '2024-05-01', '2024-05-28', 39280, 40494, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 6, '2024-06-01', '2024-06-28', 40494, 41568, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 4, '2024-07-01', '2024-07-28', 41568, 43178, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 5, '2024-08-01', '2024-08-28', 43178, 44419, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 6, '2024-09-01', '2024-09-28', 44419, 46173, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 4, '2024-10-01', '2024-10-28', 46173, 47882, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 5, '2024-11-01', '2024-11-28', 47882, 49604, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (9, 6, '2024-12-01', '2024-12-28', 49604, 50889, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 4, '2024-01-01', '2024-01-28', 32118, 33672, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 5, '2024-02-01', '2024-02-28', 33672, 34841, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 6, '2024-03-01', '2024-03-28', 34841, 35799, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 4, '2024-04-01', '2024-04-28', 35799, 36979, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 5, '2024-05-01', '2024-05-28', 36979, 38000, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 6, '2024-06-01', '2024-06-28', 38000, 39130, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 4, '2024-07-01', '2024-07-28', 39130, 40152, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 5, '2024-08-01', '2024-08-28', 40152, 41100, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 6, '2024-09-01', '2024-09-28', 41100, 42643, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 4, '2024-10-01', '2024-10-28', 42643, 44219, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 5, '2024-11-01', '2024-11-28', 44219, 45512, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (10, 6, '2024-12-01', '2024-12-28', 45512, 47027, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 7, '2024-01-01', '2024-01-28', 35274, 36500, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 8, '2024-02-01', '2024-02-28', 36500, 38066, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 9, '2024-03-01', '2024-03-28', 38066, 39517, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 7, '2024-04-01', '2024-04-28', 39517, 41087, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 8, '2024-05-01', '2024-05-28', 41087, 42594, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 9, '2024-06-01', '2024-06-28', 42594, 43983, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 7, '2024-07-01', '2024-07-28', 43983, 45601, 'Müşteri ziyareti', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 8, '2024-08-01', '2024-08-28', 45601, 46716, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 9, '2024-09-01', '2024-09-28', 46716, 47935, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 7, '2024-10-01', '2024-10-28', 47935, 49696, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 8, '2024-11-01', '2024-11-28', 49696, 50672, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (11, 9, '2024-12-01', '2024-12-28', 50672, 52367, 'Depodan dağıtım', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 7, '2024-01-01', '2024-01-28', 34441, 36137, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 8, '2024-02-01', '2024-02-28', 36137, 37785, 'Kontrol sürüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 9, '2024-03-01', '2024-03-28', 37785, 39126, 'Teslimat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 7, '2024-04-01', '2024-04-28', 39126, 40201, 'Depodan dağıtım', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 8, '2024-05-01', '2024-05-28', 40201, 41974, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 9, '2024-06-01', '2024-06-28', 41974, 43442, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 7, '2024-07-01', '2024-07-28', 43442, 44748, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 8, '2024-08-01', '2024-08-28', 44748, 46151, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 9, '2024-09-01', '2024-09-28', 46151, 47713, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 7, '2024-10-01', '2024-10-28', 47713, 48783, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 8, '2024-11-01', '2024-11-28', 48783, 49960, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (12, 9, '2024-12-01', '2024-12-28', 49960, 51368, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 7, '2024-01-01', '2024-01-28', 32381, 33956, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 8, '2024-02-01', '2024-02-28', 33956, 35686, 'Bakım dönüşü', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 9, '2024-03-01', '2024-03-28', 35686, 36786, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 7, '2024-04-01', '2024-04-28', 36786, 38509, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 8, '2024-05-01', '2024-05-28', 38509, 39452, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 9, '2024-06-01', '2024-06-28', 39452, 41194, 'Şehir içi tur', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 7, '2024-07-01', '2024-07-28', 41194, 42787, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 8, '2024-08-01', '2024-08-28', 42787, 43806, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 9, '2024-09-01', '2024-09-28', 43806, 45478, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 7, '2024-10-01', '2024-10-28', 45478, 46755, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 8, '2024-11-01', '2024-11-28', 46755, 48269, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (13, 9, '2024-12-01', '2024-12-28', 48269, 49190, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 7, '2024-01-01', '2024-01-28', 33727, 34737, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 8, '2024-02-01', '2024-02-28', 34737, 36095, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 9, '2024-03-01', '2024-03-28', 36095, 37476, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 7, '2024-04-01', '2024-04-28', 37476, 38904, 'Şehir içi tur', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 8, '2024-05-01', '2024-05-28', 38904, 40490, 'Sevkiyat', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 9, '2024-06-01', '2024-06-28', 40490, 41597, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 7, '2024-07-01', '2024-07-28', 41597, 42596, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 8, '2024-08-01', '2024-08-28', 42596, 44303, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 9, '2024-09-01', '2024-09-28', 44303, 45317, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 7, '2024-10-01', '2024-10-28', 45317, 46622, 'Ürün iadesi', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 8, '2024-11-01', '2024-11-28', 46622, 47528, 'Teslimat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (14, 9, '2024-12-01', '2024-12-28', 47528, 48839, 'Bakım dönüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 7, '2024-01-01', '2024-01-28', 31917, 33649, 'Sevkiyat', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 8, '2024-02-01', '2024-02-28', 33649, 34997, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 9, '2024-03-01', '2024-03-28', 34997, 35922, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 7, '2024-04-01', '2024-04-28', 35922, 37338, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 8, '2024-05-01', '2024-05-28', 37338, 38463, 'Depodan dağıtım', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 9, '2024-06-01', '2024-06-28', 38463, 39798, 'Kontrol sürüşü', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 7, '2024-07-01', '2024-07-28', 39798, 41381, 'Müşteri ziyareti', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 8, '2024-08-01', '2024-08-28', 41381, 42631, 'Yük taşıma', true);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 9, '2024-09-01', '2024-09-28', 42631, 43884, 'Ürün iadesi', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 7, '2024-10-01', '2024-10-28', 43884, 44971, 'Depodan dağıtım', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 8, '2024-11-01', '2024-11-28', 44971, 45992, 'Yük taşıma', false);
+INSERT INTO vehicle_usage (vehicle_id, driver_id, start_date, end_date, start_odometer, end_odometer, purpose, is_verified)
+VALUES (15, 9, '2024-12-01', '2024-12-28', 45992, 47433, 'Şehir içi tur', false);
+
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-01-28', 'Toplam: 24614.19 TL, Ortalama litre: 51.9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-01-28', 'Toplam km: 16855, En çok kullanılan araç: #2');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-01-28', 'Toplam bakım gideri: 7217.94 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-01-28', 'Toplam onarım gideri: 9329.68 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-01-28', 'Toplam gider: 40311.14 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-01-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-01-28', 'Tahmini tüketim: 597.6 litre, Tahmini maliyet: 19503.28 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-02-28', 'Toplam: 27796.10 TL, Ortalama litre: 64.9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-02-28', 'Toplam km: 21787, En çok kullanılan araç: #11');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-02-28', 'Toplam bakım gideri: 9666.98 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-02-28', 'Toplam onarım gideri: 4800.35 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-02-28', 'Toplam gider: 34223.28 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-02-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-02-28', 'Tahmini tüketim: 589.1 litre, Tahmini maliyet: 21926.91 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-03-28', 'Toplam: 28948.05 TL, Ortalama litre: 68.7');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-03-28', 'Toplam km: 15234, En çok kullanılan araç: #1');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-03-28', 'Toplam bakım gideri: 9682.25 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-03-28', 'Toplam onarım gideri: 7706.94 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-03-28', 'Toplam gider: 40800.10 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-03-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-03-28', 'Tahmini tüketim: 726.8 litre, Tahmini maliyet: 20288.72 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-04-28', 'Toplam: 24750.29 TL, Ortalama litre: 60.9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-04-28', 'Toplam km: 19520, En çok kullanılan araç: #5');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-04-28', 'Toplam bakım gideri: 9369.90 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-04-28', 'Toplam onarım gideri: 8935.79 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-04-28', 'Toplam gider: 37658.59 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-04-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-04-28', 'Tahmini tüketim: 693.0 litre, Tahmini maliyet: 21374.32 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-05-28', 'Toplam: 29409.75 TL, Ortalama litre: 68.8');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-05-28', 'Toplam km: 13090, En çok kullanılan araç: #9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-05-28', 'Toplam bakım gideri: 5756.73 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-05-28', 'Toplam onarım gideri: 6135.17 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-05-28', 'Toplam gider: 25899.24 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-05-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-05-28', 'Tahmini tüketim: 559.7 litre, Tahmini maliyet: 23586.22 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-06-28', 'Toplam: 29796.29 TL, Ortalama litre: 47.3');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-06-28', 'Toplam km: 20475, En çok kullanılan araç: #11');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-06-28', 'Toplam bakım gideri: 11508.13 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-06-28', 'Toplam onarım gideri: 6842.98 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-06-28', 'Toplam gider: 39188.63 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-06-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-06-28', 'Tahmini tüketim: 716.0 litre, Tahmini maliyet: 20980.07 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-07-28', 'Toplam: 23068.98 TL, Ortalama litre: 52.0');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-07-28', 'Toplam km: 15052, En çok kullanılan araç: #9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-07-28', 'Toplam bakım gideri: 11421.52 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-07-28', 'Toplam onarım gideri: 3926.03 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-07-28', 'Toplam gider: 39611.70 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-07-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-07-28', 'Tahmini tüketim: 582.9 litre, Tahmini maliyet: 20417.21 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-08-28', 'Toplam: 27211.69 TL, Ortalama litre: 56.8');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-08-28', 'Toplam km: 13893, En çok kullanılan araç: #15');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-08-28', 'Toplam bakım gideri: 9086.92 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-08-28', 'Toplam onarım gideri: 6547.37 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-08-28', 'Toplam gider: 31262.98 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-08-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-08-28', 'Tahmini tüketim: 675.3 litre, Tahmini maliyet: 23411.23 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-09-28', 'Toplam: 27714.16 TL, Ortalama litre: 52.9');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-09-28', 'Toplam km: 19470, En çok kullanılan araç: #15');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-09-28', 'Toplam bakım gideri: 11943.33 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-09-28', 'Toplam onarım gideri: 7268.16 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-09-28', 'Toplam gider: 38392.20 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-09-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-09-28', 'Tahmini tüketim: 605.8 litre, Tahmini maliyet: 26715.41 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-10-28', 'Toplam: 28721.21 TL, Ortalama litre: 47.4');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-10-28', 'Toplam km: 12956, En çok kullanılan araç: #11');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-10-28', 'Toplam bakım gideri: 11539.74 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-10-28', 'Toplam onarım gideri: 4541.30 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-10-28', 'Toplam gider: 30105.59 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-10-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-10-28', 'Tahmini tüketim: 656.9 litre, Tahmini maliyet: 26045.08 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-11-28', 'Toplam: 18309.29 TL, Ortalama litre: 64.2');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-11-28', 'Toplam km: 12996, En çok kullanılan araç: #5');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-11-28', 'Toplam bakım gideri: 5588.60 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-11-28', 'Toplam onarım gideri: 3172.86 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-11-28', 'Toplam gider: 26873.47 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-11-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-11-28', 'Tahmini tüketim: 564.2 litre, Tahmini maliyet: 22750.75 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'FUEL_CONSUMPTION', 'Aylık Yakıt Tüketim Raporu - 2024-12-28', 'Toplam: 20428.40 TL, Ortalama litre: 68.1');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'VEHICLE_USAGE', 'Aylık Araç Kullanım Raporu - 2024-12-28', 'Toplam km: 19182, En çok kullanılan araç: #7');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'MAINTENANCE_COST', 'Aylık Bakım Gider Raporu - 2024-12-28', 'Toplam bakım gideri: 8679.07 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'REPAIR_COST', 'Aylık Onarım Gider Raporu - 2024-12-28', 'Toplam onarım gideri: 3643.51 TL');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'TOTAL_COST', 'Toplam Aylık Gider Özeti - 2024-12-28', 'Toplam gider: 34500.28 TL (yakıt + bakım + onarım)');
+INSERT INTO reports (generated_date, type, title, data)
+VALUES ('2024-12-28', 'PREDICTION', 'Sonraki Ay Tahmini Tüketim - 2024-12-28', 'Tahmini tüketim: 708.0 litre, Tahmini maliyet: 25881.27 TL');
+
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (1, 1, 'FUEL');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (2, 1, 'MAINTENANCE');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (3, 1, 'TOTAL');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (4, 2, 'FUEL');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (5, 2, 'MAINTENANCE');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (6, 2, 'TOTAL');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (7, 3, 'FUEL');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (8, 3, 'MAINTENANCE');
+INSERT INTO expense_tracker (tracker_id, company_id, expense_type)
+VALUES (9, 3, 'TOTAL');
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (1, 1);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (1, 7);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (1, 13);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (2, 3);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (2, 9);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (2, 15);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (3, 5);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (3, 11);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (3, 17);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (4, 1);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (4, 7);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (4, 13);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (5, 3);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (5, 9);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (5, 15);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (6, 5);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (6, 11);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (6, 17);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (7, 1);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (7, 7);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (7, 13);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (8, 3);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (8, 9);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (8, 15);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (9, 5);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (9, 11);
+INSERT INTO expense_reports (tracker_id, report_id)
+VALUES (9, 17); 
+
+
+-- CASCADE FK CONSTRAINTS
+ALTER TABLE services
+DROP CONSTRAINT services_vehicle_id_fkey,
+ADD CONSTRAINT services_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
+
+ALTER TABLE fuel_consumption
+DROP CONSTRAINT fuel_consumption_vehicle_id_fkey,
+ADD CONSTRAINT fuel_consumption_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
+
+ALTER TABLE vehicle_usage
+DROP CONSTRAINT vehicle_usage_vehicle_id_fkey,
+ADD CONSTRAINT vehicle_usage_vehicle_id_fkey
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(vehicle_id) ON DELETE CASCADE;
+
+
+-- Sadece tablo sorguları:
+SELECT * FROM sys_admins;
+SELECT * FROM customers;
+SELECT * FROM drivers;
+SELECT * FROM vehicles;
+SELECT * FROM services;
+SELECT * FROM fuel_consumption;
+SELECT * FROM vehicle_usage;
+SELECT * FROM reports;
+SELECT * FROM expense_tracker;
+SELECT * FROM expense_reports;
