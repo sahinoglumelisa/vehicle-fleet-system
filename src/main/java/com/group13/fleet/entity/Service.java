@@ -37,4 +37,60 @@ public class Service {
 
     @Column(name = "is_covered_by_insurance")
     private Boolean isCoveredByInsurance;
+
+    public Long getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(Long serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public Integer getVehicle() {
+        return vehicle;
+    }
+
+    public void setVehicle(Integer vehicle) {
+        this.vehicle = vehicle;
+    }
+
+    public Date getServiceDate() {
+        return serviceDate;
+    }
+
+    public void setServiceDate(Date serviceDate) {
+        this.serviceDate = serviceDate;
+    }
+
+    public ServiceType getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(ServiceType serviceType) {
+        this.serviceType = serviceType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getCost() {
+        return cost;
+    }
+
+    public void setCost(Double cost) {
+        this.cost = cost;
+    }
+
+    public Boolean getCoveredByInsurance() {
+        return isCoveredByInsurance;
+    }
+
+    public void setCoveredByInsurance(Boolean coveredByInsurance) {
+        isCoveredByInsurance = coveredByInsurance;
+    }
 }

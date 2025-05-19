@@ -1,5 +1,6 @@
 package com.group13.fleet.repository;
 
+import com.group13.fleet.entity.Customer;
 import com.group13.fleet.entity.Driver;
 import com.group13.fleet.entity.Vehicle;
 import com.group13.fleet.entity.VehicleStatus;
@@ -21,8 +22,19 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
     List<Vehicle> findByOwnershipType(com.group13.fleet.entity.OwnershipType ownershipType);
     Vehicle findByVehicleId(Integer vehicleId);
 
-    @Query("SELECT DISTINCT v.driver FROM Vehicle v WHERE v.customer = :companyId")
-    List<Driver> findDriversByCompanyId(@Param("companyId") Integer companyId);
+    @Query("SELECT DISTINCT v.driver FROM Vehicle v WHERE v.customer = :companyId AND v.driver IS NOT NULL")
+    List<Integer> findDriversByCompanyId(@Param("companyId") Integer companyId);
+
+    List<Vehicle> findByCustomerAndStatus(Integer customer, VehicleStatus status);
+
+    List<Vehicle> findByStatusAndCustomerIsNull(VehicleStatus vehicleStatus);
+
+    List<Vehicle> findVehicleByCustomerIsNull();
+
+    List<Vehicle> findVehiclesByCustomerAndStatus(Integer customer, VehicleStatus status);
+
+    @Query("SELECT DISTINCT v FROM Vehicle v WHERE v.customer = :customerId AND v.status IN (:available)")
+    List<Vehicle> findByCustomerAndStatuses(Integer customerId, List<VehicleStatus> available);
 }
 
 

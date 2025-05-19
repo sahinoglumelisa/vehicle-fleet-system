@@ -2,10 +2,7 @@ package com.group13.fleet;
 
 import com.group13.fleet.controller.OutsourceServiceFuelController;
 import com.group13.fleet.entity.*;
-import com.group13.fleet.repository.DriverRepository;
-import com.group13.fleet.repository.FuelConsumptionRepository;
-import com.group13.fleet.repository.ServiceRepository;
-import com.group13.fleet.repository.VehicleRepository;
+import com.group13.fleet.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,6 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @ExtendWith(MockitoExtension.class)
 class FleetApplicationTests {
+	@Mock
+	private CustomerRepository customerRepository;
 
 	@Mock
 	private VehicleRepository vehicleRepository;
@@ -137,8 +136,8 @@ class FleetApplicationTests {
 		);
 
 		List<FuelConsumption> fuelEntries = Arrays.asList(
-				createMockFuelConsumption(1L, 1, 1),
-				createMockFuelConsumption(2L, 2, 2)
+				createMockFuelConsumption(1, 1, 1),
+				createMockFuelConsumption(2, 2, 2)
 		);
 
 		when(vehicleRepository.findAll()).thenReturn(vehicles);
@@ -232,8 +231,8 @@ class FleetApplicationTests {
 	@Test
 	void testFilterFuelEntries() throws Exception {
 		List<FuelConsumption> fuelEntries = Arrays.asList(
-				createMockFuelConsumption(1L, 1, 1),
-				createMockFuelConsumption(2L, 2, 2)
+				createMockFuelConsumption(1, 1, 1),
+				createMockFuelConsumption(2, 2, 2)
 		);
 
 		when(fuelConsumptionRepository.findAll()).thenReturn(fuelEntries);
@@ -266,7 +265,7 @@ class FleetApplicationTests {
 		return driver;
 	}
 
-	private FuelConsumption createMockFuelConsumption(Long fuelId, Integer vehicleId, Integer driverId) {
+	private FuelConsumption createMockFuelConsumption(Integer fuelId, Integer vehicleId, Integer driverId) {
 		FuelConsumption fuelConsumption = new FuelConsumption();
 		fuelConsumption.setFuelId(fuelId);
 		fuelConsumption.setVehicle(vehicleId);
@@ -307,6 +306,7 @@ class FleetApplicationTests {
 
 	@Test
 	void testAddVehicle_Success() throws Exception {
+		// Tries to add vehicle from route
 		Vehicle savedVehicle = createMockLeasedVehicle(1, "Ford", "Focus", "GHI789");
 
 		when(vehicleRepository.save(any(Vehicle.class))).thenReturn(savedVehicle);
@@ -353,6 +353,7 @@ class FleetApplicationTests {
 
 	@Test
 	void testShowEditForm_VehicleExists() throws Exception {
+		//Tries to access the edit form
 		Vehicle existingVehicle = createMockLeasedVehicle(1, "Audi", "A4", "MNO345");
 
 		when(vehicleRepository.findByPlateNumber("MNO345")).thenReturn(existingVehicle);
@@ -369,6 +370,7 @@ class FleetApplicationTests {
 
 	@Test
 	void testShowEditForm_VehicleNotFound() throws Exception {
+		//Tries to update with notfound plateNum
 		when(vehicleRepository.findByPlateNumber("NOTFOUND")).thenReturn(null);
 
 		vehicleMockMvc.perform(get("/outsource/management-vehicles/edit")
@@ -381,6 +383,8 @@ class FleetApplicationTests {
 
 	@Test
 	void testUpdateVehicle_Success() throws Exception {
+		/* MELİSA*/
+		// Tries to update a vehicle by directly using route
 		Vehicle existingVehicle = createMockLeasedVehicle(1, "Mercedes", "C-Class", "PQR678");
 		existingVehicle.setYear(2020);
 		existingVehicle.setCurrentOdometer(30000.0);
@@ -411,6 +415,8 @@ class FleetApplicationTests {
 
 	@Test
 	void testUpdateVehicle_VehicleNotFound() throws Exception {
+		/* DENİZ */
+		//Scenario where the vehicle is not being found by using plate number
 		when(vehicleRepository.findByPlateNumber("NOTFOUND")).thenReturn(null);
 
 		vehicleMockMvc.perform(post("/outsource/management-vehicles/edit")
@@ -427,7 +433,7 @@ class FleetApplicationTests {
 
 	@Test
 	void testAddVehicle_DirectControllerCall() {
-		// Test the controller method directly
+		//* MELİSA *//
 		Vehicle vehicle = new Vehicle();
 		vehicle.setBrand("Tesla");
 		vehicle.setModel("Model 3");
@@ -436,6 +442,7 @@ class FleetApplicationTests {
 
 		when(vehicleRepository.save(any(Vehicle.class))).thenReturn(vehicle);
 
+		// It directly tests add vehicle functionality of controller
 		String result = vehicleController.addVehicle(vehicle);
 
 		assertEquals("redirect:/outsource/management-vehicles/list", result);
@@ -448,24 +455,25 @@ class FleetApplicationTests {
 
 	@Test
 	void testUpdateVehicle_DirectControllerCall() {
+		//* DENİZ *//
 		// Test the controller method directly
 		Vehicle existingVehicle = createMockLeasedVehicle(1, "Volkswagen", "Golf", "VWX234");
-		Vehicle updatedVehicle = new Vehicle();
-		updatedVehicle.setPlateNumber("VWX234");
-		updatedVehicle.setBrand("Volkswagen");
-		updatedVehicle.setModel("Golf GTI");
-		updatedVehicle.setYear(2023);
-		updatedVehicle.setStatus(VehicleStatus.AVAILABLE);
-		updatedVehicle.setCurrentOdometer(18000.0);
+		Vehicle updateMockVehicle = new Vehicle();
+		updateMockVehicle.setPlateNumber("VWX234");
+		updateMockVehicle.setBrand("Volkswagen");
+		updateMockVehicle.setModel("Golf GTI");
+		updateMockVehicle.setYear(2023);
+		updateMockVehicle.setStatus(VehicleStatus.AVAILABLE);
+		updateMockVehicle.setCurrentOdometer(18000.0);
 
 		when(vehicleRepository.findByPlateNumber("VWX234")).thenReturn(existingVehicle);
 		when(vehicleRepository.save(existingVehicle)).thenReturn(existingVehicle);
 
-		String result = vehicleController.updateVehicle(updatedVehicle);
+		String result = vehicleController.updateVehicle(updateMockVehicle);
 
 		assertEquals("redirect:/outsource/management-vehicles/list", result);
 
-		// Verify that existing vehicle was updated
+		// It checks whether the vehicle is being updated
 		assertEquals("Volkswagen", existingVehicle.getBrand());
 		assertEquals("Golf GTI", existingVehicle.getModel());
 		assertEquals(2023, existingVehicle.getYear());
@@ -476,7 +484,7 @@ class FleetApplicationTests {
 		verify(vehicleRepository).save(existingVehicle);
 	}
 
-	// Add this helper method to your existing helper methods:
+	// It is an helper method which creates a mock vehicle
 	private Vehicle createMockLeasedVehicle(int id, String brand, String model, String plateNumber) {
 		Vehicle vehicle = new Vehicle();
 		vehicle.setVehicleId(id);

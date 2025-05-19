@@ -103,7 +103,7 @@ public class LoginController {
             );
 
             // Redirect to customer dashboard
-            return "redirect:/dashboard";
+            return "redirect:/customer/dashboard";
         } else {
             // Authentication failed
             redirectAttributes.addFlashAttribute("error", "Invalid email or password");

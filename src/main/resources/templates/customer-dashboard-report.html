@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FleetManager - Customer Dashboard</title>
+    <title>Title</title>
     <style>
         * {
             margin: 0;
@@ -142,94 +141,42 @@
             background-color: #fff3cd;
             color: #ffc107;
         }
+        .clickable-nav {
+            background-color: #1a2942;
+            padding: 20px 40px;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        .clickable-nav:hover {
+            background-color: #2c3e50;
+
+        }
+        .list-box {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin: auto;
+            width: fit-content;
+        }
+        .main-content{
+            display: flex;
+            width: 100%;
+            height: 100%
+        }
     </style>
 </head>
 <body>
-<!-- Sidebar -->
 <div th:replace="fragments :: sidebar"></div>
 
-
-<!-- Main Content -->
-<div class="content">
-    <h1 class="page-title">Dashboard</h1>
-
-    <!-- Dashboard Summary Cards -->
-    <div class="dashboard-cards">
-        <div class="card">
-            <div class="card-title">Total Vehicles</div>
-            <div class="card-value" th:text="${totalVehicles}">12</div>
-        </div>
-        <div class="card">
-            <div class="card-title">Active Vehicles</div>
-            <div class="card-value" th:text="${activeVehicles}">10</div>
-        </div>
-        <div class="card">
-            <div class="card-title">In Maintenance</div>
-            <div class="card-value" th:text="${maintenanceVehicles}">2</div>
-        </div>
-    </div>
-
-    <!-- Vehicle List -->
-    <div class="vehicle-list">
-        <h2>Your Vehicles</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Vehicle ID</th>
-                <th>Model</th>
-                <th>License Plate</th>
-                <th>Leased/Owned</th>
-                <th>Previous Month Odometer</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="vehicle : ${vehicles}">
-                <td th:text="${vehicle.vehicleId}">VH-001</td>
-                <td th:text="${vehicle.model}">Toyota Camry</td>
-                <td th:text="${vehicle.plateNumber}">ABC-1234</td>
-                <td th:text="${vehicle.ownershipType}"></td>
-                <td th:text="${vehicle.previousMonthOdometer}"></td>
-                <td>
-                            <span class="status-badge"
-                                  th:classappend="${vehicle.status.name() == 'ASSIGNED' ? 'status-active' : (vehicle.status.name() == 'IN_SERVICE' ? 'status-maintenance' : 'status-other')}"
-                                  th:text="${vehicle.status}">ACTIVE</span>
-                </td>
-            </tr>
-
-            </tbody>
-        </table>
-    </div>
-    <br>
-    <!-- Driver List -->
-    <div class="vehicle-list">
-        <h2>Your Drivers</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Driver ID</th>
-                <th>Name</th>
-                <th>License Number</th>
-                <th>License Expiry Date</th>
-                <th>Active Status</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="driver : ${drivers}">
-                <td th:text="${driver.userId}"></td>
-                <td th:text="${driver.username.split('_')[1].toUpperCase()}"></td>
-                <td th:text="${driver.licenseNumber}"></td>
-                <td th:text="${driver.licenseExpiryDate}"></td>
-                <td>
-                            <span class="status-badge"
-                                  th:classappend="${driver.active ? 'status-active' : 'status-inactive'}"
-                                  th:text="${driver.getActive() ? 'True' : 'False'}"></span>
-                </td>
-            </tr>
-
-            </tbody>
-        </table>
+<div class="main-content m-auto ">
+    <div class="list-box">
+        <a class="clickable-nav" th:href="@{/customer/dashboard/report/monthly-summary}">Report for Company</a>
+        <a class="clickable-nav">Report for Owned Vehicle</a>
+        <a class="clickable-nav">Report for Leased Vehicle</a>
     </div>
 </div>
+
 </body>
 </html>

@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FleetManager - Customer Dashboard</title>
+    <title>Assing Job</title>,
     <style>
         * {
             margin: 0;
@@ -55,7 +54,6 @@
 
         .content {
             flex-grow: 1;
-            overflow-y: scroll;
             padding: 30px;
         }
 
@@ -133,77 +131,33 @@
             color: #28a745;
         }
 
-        .status-inactive {
-            background-color: #DC143C;
-            color: #ffffff;
-        }
-
         .status-maintenance {
             background-color: #fff3cd;
             color: #ffc107;
         }
+
+        .btn-assign {
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: #1a2942;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-assign:hover {
+            background-color: #2980b9;
+        }
+
     </style>
 </head>
 <body>
-<!-- Sidebar -->
 <div th:replace="fragments :: sidebar"></div>
-
-
-<!-- Main Content -->
 <div class="content">
-    <h1 class="page-title">Dashboard</h1>
-
-    <!-- Dashboard Summary Cards -->
-    <div class="dashboard-cards">
-        <div class="card">
-            <div class="card-title">Total Vehicles</div>
-            <div class="card-value" th:text="${totalVehicles}">12</div>
-        </div>
-        <div class="card">
-            <div class="card-title">Active Vehicles</div>
-            <div class="card-value" th:text="${activeVehicles}">10</div>
-        </div>
-        <div class="card">
-            <div class="card-title">In Maintenance</div>
-            <div class="card-value" th:text="${maintenanceVehicles}">2</div>
-        </div>
-    </div>
-
-    <!-- Vehicle List -->
     <div class="vehicle-list">
-        <h2>Your Vehicles</h2>
-        <table>
-            <thead>
-            <tr>
-                <th>Vehicle ID</th>
-                <th>Model</th>
-                <th>License Plate</th>
-                <th>Leased/Owned</th>
-                <th>Previous Month Odometer</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="vehicle : ${vehicles}">
-                <td th:text="${vehicle.vehicleId}">VH-001</td>
-                <td th:text="${vehicle.model}">Toyota Camry</td>
-                <td th:text="${vehicle.plateNumber}">ABC-1234</td>
-                <td th:text="${vehicle.ownershipType}"></td>
-                <td th:text="${vehicle.previousMonthOdometer}"></td>
-                <td>
-                            <span class="status-badge"
-                                  th:classappend="${vehicle.status.name() == 'ASSIGNED' ? 'status-active' : (vehicle.status.name() == 'IN_SERVICE' ? 'status-maintenance' : 'status-other')}"
-                                  th:text="${vehicle.status}">ACTIVE</span>
-                </td>
-            </tr>
-
-            </tbody>
-        </table>
-    </div>
-    <br>
-    <!-- Driver List -->
-    <div class="vehicle-list">
-        <h2>Your Drivers</h2>
+        <h2>Drivers</h2>
         <table>
             <thead>
             <tr>
@@ -212,6 +166,7 @@
                 <th>License Number</th>
                 <th>License Expiry Date</th>
                 <th>Active Status</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
@@ -222,8 +177,11 @@
                 <td th:text="${driver.licenseExpiryDate}"></td>
                 <td>
                             <span class="status-badge"
-                                  th:classappend="${driver.active ? 'status-active' : 'status-inactive'}"
+                                  th:classappend="${driver.getActive() ? 'status-active' : 'status-inactive'}"
                                   th:text="${driver.getActive() ? 'True' : 'False'}"></span>
+                </td>
+                <td>
+                    <a th:href="@{'/customer/dashboard/assign/driver/' + ${driver.userId}}" class="btn-assign">Assign Job</a>
                 </td>
             </tr>
 

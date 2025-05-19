@@ -8,22 +8,24 @@ import com.group13.fleet.repository.CustomerRepository;
 import com.group13.fleet.repository.DriverRepository;
 import com.group13.fleet.repository.VehicleRepository;
 import com.group13.fleet.repository.VehicleUsageRepository;
-import com.group13.fleet.service.VehicleService;
+import com.group13.fleet.service.CustomerExpenseService;
+import com.group13.fleet.service.OutsourceExpenseService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -37,6 +39,8 @@ public class DashboardController {
     private VehicleUsageRepository vehicleUsageRepository;
     @Autowired
     private CustomerRepository customerRepository;
+    @Autowired
+    private CustomerExpenseService customerExpenseService;
 
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
@@ -204,8 +208,13 @@ public class DashboardController {
     public String showCustomerDashboard(Model model, HttpSession session) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer customerId = (Integer) session.getAttribute("customerId");
+
         List<Vehicle> vehicles = vehicleRepository.findVehicleByCustomer(customerId);
         model.addAttribute("vehicles", vehicles);
+
+        List<Driver> drivers = driverRepository.findDriversByCompanyId(customerId);
+        model.addAttribute("drivers", drivers);
+        System.out.println(drivers);
 
         model.addAttribute("totalVehicles", vehicles.size());
         model.addAttribute("activeVehicles", vehicles.stream().filter(vehicle -> vehicle.getStatus()== VehicleStatus.ASSIGNED).count());
@@ -214,21 +223,115 @@ public class DashboardController {
         return "customer-dashboard";
     }
 
+
+    @GetMapping("/customer/dashboard/assign/driver")
+    public String showAssignPage(Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        List<Driver> drivers = driverRepository.findDriversByCompanyIdAndStatus(customerId,false);
+        model.addAttribute("drivers", drivers);
+        System.out.println(drivers);
+        return "customer-dashboard-assign-driver";
+    }
+
+    @GetMapping("/customer/dashboard/assign/vehicle")
+    public String showVehicleAssignPage(Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        List<Vehicle> vehicles = vehicleRepository.findVehiclesByCustomerAndStatus(customerId,VehicleStatus.AVAILABLE);
+        model.addAttribute("vehicles", vehicles);
+        System.out.println(vehicles);
+        return "customer-dashboard-assign-vehicle";
+    }
+
+    @GetMapping("/customer/dashboard/assign/driver/{driverId}")
+    public String showDriverAssignmentPage(@PathVariable("driverId") Integer driverId, Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid driver ID: " + driverId));
+
+        model.addAttribute("driver", driver);
+
+        List<Vehicle> availableVehicles = vehicleRepository.findByCustomerAndStatuses(customerId,List.of(VehicleStatus.AVAILABLE,VehicleStatus.WAITING_FOR_ASSIGNMENT));
+        System.out.println(availableVehicles);
+        model.addAttribute("availableVehicles", availableVehicles);
+        return "assign-job-driver";
+    }
+
+    @GetMapping("/customer/dashboard/assign/vehicle/{vehicleId}")
+    public String showVehicleAssignmentPage(@PathVariable("vehicleId") Integer vehicleId, Model model) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid driver ID: " + vehicleId));
+
+        model.addAttribute("vehicle", vehicle);
+        return "assign-job-vehicle";
+    }
+
+    @GetMapping("/customer/dashboard/fleet")
+    public String showFleetPage(Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        List<Vehicle> vehicles = vehicleRepository.findVehicleByCustomerIsNull();
+        model.addAttribute("vehicles", vehicles);
+        return "fleet-job-customer";
+    }
+
+    @GetMapping("/customer/dashboard/newDriver")
+    public String showNewDriverPage(Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        model.addAttribute("customerId", customerId);
+
+        Driver driver = new Driver();
+        model.addAttribute("driver", driver);
+        return "new-driver-page";
+    }
+
+    @GetMapping("/customer/dashboard/ownedVehicle")
+    public String showOwnedVehiclePage(Model model, HttpSession session) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+        Vehicle newVehicle = new Vehicle();
+
+        model.addAttribute("vehicle", newVehicle);
+        model.addAttribute("customerId", customerId);
+        return "customer-owned-vehicle";
+    }
+
     @GetMapping("/customer/dashboard/report")
-    public String showReportPage(Model model, HttpSession session) {
+    public String showReportsPage(Model model, HttpSession session) {
         return "customer-dashboard-report";
     }
 
-    @GetMapping("/customer/dashboard/assign")
-    public String showAssignPage(Model model, HttpSession session) {
-        List<Driver> drivers = vehicleRepository.findDriversByCompanyId((Integer) session.getAttribute("companyId"));
-        model.addAttribute("drivers", drivers);
-        System.out.println(drivers);
-        return "customer-dashboard-assign";
+    @GetMapping("/customer/dashboard/report/monthly-summary")
+    public String showMonthlySummary(HttpSession session,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            Model model) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+
+        // Use current date as fallback
+        LocalDate now = LocalDate.now();
+        int finalYear = (year != null) ? year : now.getYear();
+        int finalMonth = (month != null && month >= 1 && month <= 12) ? month : now.getMonthValue();
+
+        LocalDate targetDate = LocalDate.of(finalYear, finalMonth, 1);
+
+        // Format date values for model
+        String monthYear = targetDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
+        String monthName = targetDate.format(DateTimeFormatter.ofPattern("MMMM yyyy"));
+
+        // Fetch expense-related data
+        var expenseData = customerExpenseService.getMonthlyExpenseSummary(targetDate,customerId);
+        var vehicleExpenses = customerExpenseService.getVehicleExpenseBreakdown(targetDate,customerId);
+        var chartData = customerExpenseService.getExpenseChartData(targetDate,customerId);
+
+        System.out.println(expenseData);
+
+        // Populate model
+        model.addAttribute("expenseData", expenseData);
+        model.addAttribute("vehicleExpenses", vehicleExpenses);
+        model.addAttribute("chartData", chartData);
+        model.addAttribute("currentMonth", monthYear);
+        model.addAttribute("monthName", monthName);
+
+        return "company-monthly-summary";
     }
-
-
-
 }
 
 

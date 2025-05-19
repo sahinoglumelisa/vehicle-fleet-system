@@ -19,7 +19,7 @@ public class FuelConsumption {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "fuel_id")
-    private Long fuelId;
+    private Integer fuelId;
 
     @Column(name = "vehicle_id")
     private Integer vehicle;
@@ -40,11 +40,11 @@ public class FuelConsumption {
     @Column(name = "odometer_reading")
     private Double odometerReading;
 
-    public Long getFuelId() {
+    public Integer getFuelId() {
         return fuelId;
     }
 
-    public void setFuelId(Long fuelId) {
+    public void setFuelId(Integer fuelId) {
         this.fuelId = fuelId;
     }
 

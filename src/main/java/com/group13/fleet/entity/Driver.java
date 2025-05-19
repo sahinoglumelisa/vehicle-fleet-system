@@ -88,4 +88,44 @@ public class Driver {
     public Integer getCompanyId() {
         return companyId;
     }
+
+    public void setUserId(Integer userId) {
+        this.userId = userId;
+    }
+
+    public void setCompanyId(Integer companyId) {
+        this.companyId = companyId;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = licenseNumber;
+    }
+
+    public void setLicenseExpiryDate(LocalDate licenseExpiryDate) {
+        this.licenseExpiryDate = licenseExpiryDate;
+    }
+
+    public void setActive(Boolean active) {
+        isActive = active;
+    }
+
+    public void setFuelConsumptions(List<FuelConsumption> fuelConsumptions) {
+        this.fuelConsumptions = fuelConsumptions;
+    }
+
+    public void setVehicleUsages(List<VehicleUsage> vehicleUsages) {
+        this.vehicleUsages = vehicleUsages;
+    }
 }

@@ -151,13 +151,13 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="v : ${vehicles}">
+        <tr th:each="v,stat : ${vehicles}">
             <td th:text="${v.plateNumber}"></td>
             <td th:text="${v.brand}"></td>
             <td th:text="${v.model}"></td>
             <td th:text="${v.year}"></td>
             <td th:text="${v.status}"></td>
-            <td th:text="${v.company != null ? v.company.username : 'Unassigned'}"></td>
+            <td th:text="${usernames.get(stat.index).toUpperCase()}"></td>
             <td th:text="${v.currentOdometer}"></td>
             <td>
                 <form th:action="@{/outsource/management-vehicles/edit}" method="get">

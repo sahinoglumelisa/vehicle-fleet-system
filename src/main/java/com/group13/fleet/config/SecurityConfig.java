@@ -17,6 +17,9 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register", "/css/**", "customer-login-page", "admin-login-page", "driver-login-page", "admin-login", "customer-login", "driver-login")
                         .permitAll()
                         .requestMatchers("/").hasAnyRole("CUSTOMER", "ADMIN","DRIVER")
+                        .requestMatchers("/customer/dashboard/**").hasRole("CUSTOMER")
+                        .requestMatchers("/admin/dashboard/**").hasRole("ADMIN")
+                        .requestMatchers("/driver/dashboard/**").hasRole("DRIVER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

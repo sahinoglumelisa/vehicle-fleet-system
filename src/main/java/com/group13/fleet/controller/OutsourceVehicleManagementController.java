@@ -1,7 +1,9 @@
 package com.group13.fleet.controller;
 
+import com.group13.fleet.entity.Customer;
 import com.group13.fleet.entity.OwnershipType;
 import com.group13.fleet.entity.Vehicle;
+import com.group13.fleet.repository.CustomerRepository;
 import com.group13.fleet.repository.VehicleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -9,17 +11,48 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller
 public class OutsourceVehicleManagementController {
 
     @Autowired
     private VehicleRepository vehicleRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
 
     // Araç listeleme (sadece LEASED olanlar)
     @GetMapping("/outsource/management-vehicles/list")
     public String listVehicles(Model model) {
+
+        // Step 1: Get leased vehicles
         List<Vehicle> leasedVehicles = vehicleRepository.findByOwnershipType(OwnershipType.LEASED);
+
+// Step 2: Extract all customer IDs, including nulls
+        List<Integer> customerIdsIncludingNulls = leasedVehicles.stream()
+                .map(Vehicle::getCustomer) // may include nulls
+                .collect(Collectors.toList());
+
+// Step 3: Extract non-null unique IDs for lookup
+        List<Integer> nonNullCustomerIds = customerIdsIncludingNulls.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+// Step 4: Fetch customers
+        Map<Integer, String> customerIdToUsername = customerRepository.findAllById(nonNullCustomerIds).stream()
+                .collect(Collectors.toMap(Customer::getCompanyId, Customer::getUsername));
+
+// Step 5: Map each original customer ID (including nulls) to usernames
+        List<String> usernames = customerIdsIncludingNulls.stream()
+                .map(id -> id == null ? "UNASSIGNED" : customerIdToUsername.getOrDefault(id, "Unknown"))
+                .collect(Collectors.toList());
+
+        model.addAttribute("usernames",usernames);
+        System.out.println(usernames);
+
         model.addAttribute("vehicles", leasedVehicles);
         return "outsource-vehicle-list";
     }
@@ -41,6 +74,8 @@ public class OutsourceVehicleManagementController {
         if (vehicle.getPreviousMonthOdometer() == null && vehicle.getCurrentOdometer() != null) {
             vehicle.setPreviousMonthOdometer(vehicle.getCurrentOdometer());
         }
+
+        System.out.println(vehicle);
 
         vehicleRepository.save(vehicle);
         return "redirect:/outsource/management-vehicles/list";

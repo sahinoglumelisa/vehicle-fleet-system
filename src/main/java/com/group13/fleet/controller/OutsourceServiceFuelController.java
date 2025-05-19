@@ -71,8 +71,8 @@ public class OutsourceServiceFuelController {
         model.addAttribute("fuelEntries", fuelEntries);
 
         // Create maps for vehicle and driver names to display in the table
-        Map<Long, String> vehicleNames = new HashMap<>();
-        Map<Long, String> driverNames = new HashMap<>();
+        Map<Integer, String> vehicleNames = new HashMap<>();
+        Map<Integer, String> driverNames = new HashMap<>();
 
         for (FuelConsumption entry : fuelEntries) {
             // Assuming your FuelConsumption has getVehicleId() and getDriverId() methods

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Vehicle</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      display: flex;
+      height: 100vh;
+      background-color: #f5f7fa;
+    }
+
+    .sidebar {
+      width: 250px;
+      background-color: #1a2942;
+      color: #ffffff;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .company-name {
+      font-size: 24px;
+      font-weight: bold;
+      padding: 15px 20px;
+      border-bottom: 1px solid #2d3c55;
+      margin-bottom: 20px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-item {
+      padding: 12px 20px;
+      color: #c5d0e0;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background-color: #2d3c55;
+      color: #ffffff;
+      border-left: 4px solid #3498db;
+    }
+
+    .content {
+      flex-grow: 1;
+      overflow-y: scroll;
+      padding: 30px;
+    }
+
+    .page-title {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      color: #777;
+      margin-bottom: 10px;
+    }
+
+    .card-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .vehicle-list {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+    }
+
+    .vehicle-list table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    .vehicle-list th {
+      text-align: left;
+      padding: 12px 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+      color: #495057;
+    }
+
+    .vehicle-list td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .vehicle-list tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .status-active {
+      background-color: #e7f7ee;
+      color: #28a745;
+    }
+
+    .status-inactive {
+      background-color: #DC143C;
+      color: #ffffff;
+    }
+
+    .status-maintenance {
+      background-color: #fff3cd;
+      color: #ffc107;
+    }
+    body {
+      background-color: #f5f7fa;
+    }
+    .form-container {
+      max-width: 600px;
+      margin: 50px auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .form-title {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+  </style>
+</head>
+<body>
+
+<div th:replace="fragments :: sidebar"></div>
+
+
+<div class="form-container">
+  <h2 class="form-title">Add Your Owned Vehicle to System</h2>
+  <form th:action="@{/vehicle/addOwned}" method="post" th:object="${vehicle}">
+    <input type="hidden" name="customerId" th:value="${customerId}" />
+
+    <div class="mb-3">
+      <label for="plateNumber" class="form-label">Plate Number</label>
+      <input type="text" class="form-control" id="plateNumber" name="plateNumber" required>
+    </div>
+    <div class="mb-3">
+      <label for="brand" class="form-label">Brand</label>
+      <input type="text" class="form-control" id="brand" name="brand" required>
+    </div>
+    <div class="mb-3">
+      <label for="model" class="form-label">Model</label>
+      <input type="text" class="form-control" id="model" name="model" required>
+    </div>
+    <div class="mb-3">
+      <label for="year" class="form-label">Year</label>
+      <input type="number" class="form-control" id="year" name="year" required>
+    </div>
+    <div class="mb-3">
+      <label for="type" class="form-label">Car Type</label>
+      <select class="form-select" id="type" name="type" required>
+        <option value="">Seçiniz</option>
+        <option value="SEDAN">Sedan</option>
+        <option value="VAN">Van</option>
+        <option value="SUV">SUV</option>
+        <option value="TRUCK">Truck</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="currentOdometer" class="form-label">Odometer</label>
+      <input type="number" step="0.1" class="form-control" id="currentOdometer" name="currentOdometer" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Add Vehicle</button>
+  </form>
+</div>
+
+</body>
+</html>

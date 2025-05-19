@@ -32,7 +32,7 @@ public class HomepageController {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Integer customerId = (Integer) session.getAttribute("customerId");
 
-        List<Vehicle> vehicles = vehicleRepository.findByStatus(VehicleStatus.AVAILABLE);
+        List<Vehicle> vehicles = vehicleRepository.findByStatusAndCustomerIsNull(VehicleStatus.AVAILABLE);
         model.addAttribute("vehicles", vehicles);
         List<Vehicle> myVehicles = vehicleRepository.findVehicleByCustomer(customerId);
         System.out.println(myVehicles);

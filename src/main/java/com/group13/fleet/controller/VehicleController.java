@@ -1,8 +1,6 @@
 package com.group13.fleet.controller;
 
-import com.group13.fleet.entity.Customer;
-import com.group13.fleet.entity.Vehicle;
-import com.group13.fleet.entity.VehicleStatus;
+import com.group13.fleet.entity.*;
 import com.group13.fleet.repository.CustomerRepository;
 import com.group13.fleet.repository.VehicleRepository;
 import jakarta.servlet.http.HttpSession;
@@ -11,9 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
@@ -47,37 +43,15 @@ public class VehicleController {
     }
 
 
-    @PostMapping("/addVehicle")
-    public String addVehicleToCustomer(HttpSession session, RedirectAttributes redirectAttributes) {
+    @PostMapping("/vehicle/addVehicle")
+    public String addVehicleToCustomer(HttpSession session, RedirectAttributes redirectAttributes, @RequestParam("vehicleId") Integer vehicleId) {
         try {
-            // 1. Get logged-in user's email from Spring Security context
-            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-            String email;
+            Integer customerId = (Integer) session.getAttribute("customerId");
 
-            if (principal instanceof UserDetails) {
-                email = ((UserDetails) principal).getUsername();
-            } else {
-                email = principal.toString();
-            }
+            Vehicle vehicle = vehicleRepository.findByVehicleId(vehicleId);
 
-            // 2. Find the customer by email
-            Customer customer = customerRepository.findByEmail(email);
-            if (customer == null) {
-                redirectAttributes.addFlashAttribute("error", "Customer not found.");
-                return "redirect:/";
-            }
-
-            // 3. Example: Get a vehicle (in real case you’d probably receive an ID)
-            // Here we're assuming you want to attach the latest "unassigned" vehicle.
-            Vehicle vehicle = vehicleRepository.findFirstByCustomerIsNull(); // You can customize this
-            if (vehicle == null) {
-                redirectAttributes.addFlashAttribute("error", "No available vehicle to assign.");
-                return "redirect:/";
-            }
-
-            // 4. Assign vehicle to customer and update status
-            vehicle.setCustomer(customer.getCompanyId());
-            vehicle.setStatus(VehicleStatus.ASSIGNED); // or any appropriate value
+            vehicle.setCustomer(customerId);
+            vehicle.setStatus(VehicleStatus.AVAILABLE); // or any appropriate value
 
             vehicleRepository.save(vehicle);
 
@@ -86,6 +60,40 @@ public class VehicleController {
             redirectAttributes.addFlashAttribute("error", "An error occurred while assigning the vehicle.");
         }
 
-        return "redirect:/dashboard"; // or wherever the user should go next
+        return "redirect:/customer/dashboard"; // or wherever the user should go next
+    }
+
+    @PostMapping("/vehicle/addOwned")
+    public String addOwnedVehicle(HttpSession session, @ModelAttribute("vehicle") Vehicle vehicle) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+
+        vehicle.setCustomer(customerId);
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setOwnershipType(OwnershipType.OWNED);
+        vehicle.setCurrentOdometer(0.0);
+        vehicle.setPreviousMonthOdometer(vehicle.getCurrentOdometer());
+        vehicle.setDriver(null);
+
+        vehicleRepository.save(vehicle);
+
+        return "redirect:/customer/dashboard";
+
+    }
+
+    @PostMapping("/vehicle/pool/{vehicleId}")
+    public String assignVehicleJob(HttpSession session, RedirectAttributes redirectAttributes,@PathVariable("vehicleId") Integer vehicleId) {
+        try {
+            Integer customerId = (Integer) session.getAttribute("customerId");
+
+            Vehicle vehicle = vehicleRepository.findByVehicleId(vehicleId);
+            vehicle.setStatus(VehicleStatus.WAITING_FOR_ASSIGNMENT);
+            vehicleRepository.save(vehicle);
+
+            redirectAttributes.addFlashAttribute("success", "Vehicle added successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "An error occurred while assigning the vehicle.");
+        }
+
+        return "redirect:/customer/dashboard"; // or wherever the user should go next
     }
 }

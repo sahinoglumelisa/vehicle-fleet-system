@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.util.Date;
 
@@ -12,6 +13,19 @@ import java.util.Date;
 @Entity
 @Table(name = "vehicle_usage")
 public class VehicleUsage {
+
+    public VehicleUsage(Integer usageId, Integer vehicle, Integer driver, LocalDate startDate, LocalDate endDate, Double startOdometer, Double endOdometer, String purpose, Boolean isVerified) {
+        this.usageId = usageId;
+        this.vehicle = vehicle;
+        this.driver = driver;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.startOdometer = startOdometer;
+        this.endOdometer = endOdometer;
+        this.purpose = purpose;
+        this.isVerified = isVerified;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "usage_id")
@@ -42,6 +56,10 @@ public class VehicleUsage {
 
     @Column(name = "is_verified")
     private Boolean isVerified;
+
+    public VehicleUsage() {
+
+    }
 
     public Double getDrivenKm() {
         return this.endOdometer - this.startOdometer;

@@ -8,17 +8,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
-public class OutsourceExpenseService {
+public class CustomerExpenseService {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public Map<String, Object> getMonthlyExpenseSummary(LocalDate targetDate) {
+    public Map<String, Object> getMonthlyExpenseSummary(LocalDate targetDate, int customerId) {
         String month = targetDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
         Map<String, Object> summary = new HashMap<>();
 
-        // Get total expenses by category for leased vehicles
         String sql = """
     SELECT 
         COALESCE(SUM(CASE WHEN s.service_type IN ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE') 
@@ -35,11 +34,11 @@ public class OutsourceExpenseService {
     LEFT JOIN reports r ON DATE_TRUNC('month', r.generated_date) = DATE_TRUNC('month', ?::date)
         AND r.type = 'INSURANCE_COST'
     WHERE v.ownership_type = 'LEASED'
+        AND v.company_id = ?
 """;
 
-        Map<String, Object> result = jdbcTemplate.queryForMap(sql, targetDate, targetDate, targetDate);
+        Map<String, Object> result = jdbcTemplate.queryForMap(sql, targetDate, targetDate, targetDate, customerId);
 
-        // Safe null-checking when extracting values
         double maintenanceCost = getDoubleValue(result.get("maintenance_cost"));
         double repairCost = getDoubleValue(result.get("repair_cost"));
         double fuelCost = getDoubleValue(result.get("fuel_cost"));
@@ -55,7 +54,8 @@ public class OutsourceExpenseService {
         return summary;
     }
 
-    public List<Map<String, Object>> getVehicleExpenseBreakdown(LocalDate targetDate) {
+
+    public List<Map<String, Object>> getVehicleExpenseBreakdown(LocalDate targetDate, int customerId) {
         String sql = """
             SELECT 
                 v.vehicle_id,
@@ -91,14 +91,15 @@ public class OutsourceExpenseService {
                 GROUP BY vehicle_id
             ) fuel ON v.vehicle_id = fuel.vehicle_id
             WHERE v.ownership_type = 'LEASED'
+                AND v.company_id = ?
             ORDER BY total_cost DESC
             """;
 
-        return jdbcTemplate.queryForList(sql, targetDate, targetDate, targetDate);
+        return jdbcTemplate.queryForList(sql, targetDate, targetDate, targetDate, customerId);
     }
 
-    public List<Map<String, Object>> getExpenseChartData(LocalDate targetDate) {
-        // Get last 6 months of data for chart
+
+    public List<Map<String, Object>> getExpenseChartData(LocalDate targetDate, int customerId) {
         List<Map<String, Object>> chartData = new ArrayList<>();
 
         for (int i = 5; i >= 0; i--) {
@@ -119,9 +120,9 @@ public class OutsourceExpenseService {
                 LEFT JOIN fuel_consumption fc ON v.vehicle_id = fc.vehicle_id 
                     AND DATE_TRUNC('month', fc.date) = DATE_TRUNC('month', ?::date)
                 WHERE v.ownership_type = 'LEASED'
+                    AND v.company_id = ?
                 """;
-
-            Map<String, Object> monthData = jdbcTemplate.queryForMap(sql, monthDate, monthDate);
+            Map<String, Object> monthData = jdbcTemplate.queryForMap(sql, monthDate, monthDate, customerId);
             monthData.put("month", monthLabel);
 
             double total = getDoubleValue(monthData.get("maintenance")) +
@@ -135,6 +136,7 @@ public class OutsourceExpenseService {
 
         return chartData;
     }
+
 
     public Map<String, Object> getMovingAverageForecast() {
         // Implementation for moving average forecast
