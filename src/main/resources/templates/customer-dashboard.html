@@ -142,16 +142,29 @@
             background-color: #fff3cd;
             color: #ffc107;
         }
+
+        .remove-button {
+            padding: 6px 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .remove-button:hover {
+            background-color: #c0392b;
+        }
     </style>
 </head>
 <body>
 <!-- Sidebar -->
 <div th:replace="fragments :: sidebar"></div>
 
-
 <!-- Main Content -->
 <div class="content">
     <h1 class="page-title">Dashboard</h1>
+
 
     <!-- Dashboard Summary Cards -->
     <div class="dashboard-cards">
@@ -181,6 +194,7 @@
                 <th>Leased/Owned</th>
                 <th>Previous Month Odometer</th>
                 <th>Status</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
@@ -188,19 +202,38 @@
                 <td th:text="${vehicle.vehicleId}">VH-001</td>
                 <td th:text="${vehicle.model}">Toyota Camry</td>
                 <td th:text="${vehicle.plateNumber}">ABC-1234</td>
-                <td th:text="${vehicle.ownershipType}"></td>
-                <td th:text="${vehicle.previousMonthOdometer}"></td>
+                <td th:text="${vehicle.ownershipType}">OWNED</td>
+                <td th:text="${vehicle.previousMonthOdometer}">123456</td>
                 <td>
-                            <span class="status-badge"
-                                  th:classappend="${vehicle.status.name() == 'ASSIGNED' ? 'status-active' : (vehicle.status.name() == 'IN_SERVICE' ? 'status-maintenance' : 'status-other')}"
-                                  th:text="${vehicle.status}">ACTIVE</span>
+                    <span class="status-badge"
+                          th:classappend="${vehicle.status.name() == 'ASSIGNED' ? 'status-active' : (vehicle.status.name() == 'IN_SERVICE' ? 'status-maintenance' : 'status-other')}"
+                          th:text="${vehicle.status}">ACTIVE</span>
                 </td>
-            </tr>
+                <td>
+                    <div th:if="${vehicle.status.name() == 'AVAILABLE'}">
+                        <form th:action="@{/customer/dashboard/remove-from-fleet}" method="post">
+                            <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}" />
+                            <button class="remove-button" type="submit"
+                                    onclick="return confirm('Are you sure you want to remove this vehicle from your fleet?')">
+                                Remove
+                            </button>
+                        </form>
+                    </div>
+                    <div th:if="${vehicle.status.name() != 'AVAILABLE'}">
+                        <button class="remove-button" type="button"
+                                onclick="alert('This vehicle cannot be removed unless its status is AVAILABLE.')">
+                            Remove
+                        </button>
+                    </div>
+                </td>
 
+            </tr>
             </tbody>
         </table>
     </div>
+
     <br>
+
     <!-- Driver List -->
     <div class="vehicle-list">
         <h2>Your Drivers</h2>
@@ -221,15 +254,15 @@
                 <td th:text="${driver.licenseNumber}"></td>
                 <td th:text="${driver.licenseExpiryDate}"></td>
                 <td>
-                            <span class="status-badge"
-                                  th:classappend="${driver.active ? 'status-active' : 'status-inactive'}"
-                                  th:text="${driver.getActive() ? 'True' : 'False'}"></span>
+                    <span class="status-badge"
+                          th:classappend="${driver.active ? 'status-active' : 'status-inactive'}"
+                          th:text="${driver.active ? 'True' : 'False'}"></span>
                 </td>
             </tr>
-
             </tbody>
         </table>
     </div>
 </div>
+
 </body>
 </html>

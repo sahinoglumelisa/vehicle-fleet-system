@@ -6,10 +6,13 @@ import com.group13.fleet.service.CustomerExpenseService;
 import com.group13.fleet.service.OutsourceExpenseService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -18,10 +21,6 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class DashboardController {
@@ -451,6 +450,34 @@ public class DashboardController {
 
         return "customer-monthly-summary-for-vehicle"; // your HTML file
     }
+    @PostMapping("/customer/dashboard/remove-from-fleet")
+    public String removeFromFleet(@RequestParam("vehicleId") int vehicleId, RedirectAttributes redirectAttributes) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            redirectAttributes.addFlashAttribute("error", "❌ Only AVAILABLE vehicles can be removed.");
+            return "redirect:/customer/dashboard";
+        }
+
+        if (vehicle.getOwnershipType() == OwnershipType.OWNED) {
+            vehicleRepository.delete(vehicle);
+        } else {
+            vehicle.setCustomer(null);
+            vehicle.setDriver(null);
+            vehicle.setStatus(VehicleStatus.AVAILABLE);
+            vehicleRepository.save(vehicle);
+        }
+
+        redirectAttributes.addFlashAttribute("success", "✅ Vehicle successfully removed.");
+        return "redirect:/customer/dashboard";
+    }
+
+
+
+
+
+
 
 
 }
