@@ -451,6 +451,27 @@ public class DashboardController {
 
         return "customer-monthly-summary-for-vehicle"; // your HTML file
     }
+    @PostMapping("/customer/dashboard/remove-from-fleet")
+    public String removeFromFleet(@RequestParam("vehicleId") int vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        if (vehicle.getOwnershipType() == OwnershipType.OWNED) {
+            // Eğer araç müşteriye aitse tamamen sistemden kaldır
+            vehicleRepository.delete(vehicle);
+        } else if (vehicle.getOwnershipType() == OwnershipType.LEASED) {
+            // Kiralık araçsa sadece ilişkilendirmeleri kaldır
+            vehicle.setCustomer(null);
+            vehicle.setDriver(null);
+            vehicle.setStatus(VehicleStatus.AVAILABLE);
+            vehicleRepository.save(vehicle);
+        }
+
+        return "redirect:/customer/dashboard";
+    }
+
+
+
 
 
 }
