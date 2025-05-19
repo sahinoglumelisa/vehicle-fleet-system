@@ -13,6 +13,45 @@ public class CustomerExpenseService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    public Map<String, Object> getMonthlyVehicleStats(LocalDate targetDate,int customerId, int vehicleId) {
+        String sql = """
+    SELECT 
+        v.vehicle_id,
+        v.plate_number,
+        v.brand,
+        v.model,
+        v.year,
+        COALESCE(maintenance.cost, 0) as maintenance_cost,
+        COALESCE(repair.cost, 0) as repair_cost,
+        COALESCE(fuel.cost, 0) as fuel_cost,
+        0 as insurance_cost,
+        (COALESCE(maintenance.cost, 0) + COALESCE(repair.cost, 0) + 
+         COALESCE(fuel.cost, 0) + 0) as total_cost
+    FROM vehicles v
+    LEFT JOIN (
+        SELECT vehicle_id, SUM(cost) as cost
+        FROM services
+        WHERE service_type IN ('REGULAR_MAINTENANCE', 'PART_REPLACEMENT', 'TIRE_CHANGE')
+        GROUP BY vehicle_id
+    ) maintenance ON v.vehicle_id = maintenance.vehicle_id
+    LEFT JOIN (
+        SELECT vehicle_id, SUM(cost) as cost
+        FROM services
+        WHERE service_type = 'REPAIR'
+        GROUP BY vehicle_id
+    ) repair ON v.vehicle_id = repair.vehicle_id
+    LEFT JOIN (
+        SELECT vehicle_id, SUM(cost) as cost
+        FROM fuel_consumption
+        GROUP BY vehicle_id
+    ) fuel ON v.vehicle_id = fuel.vehicle_id
+    WHERE v.vehicle_id = ?
+""";
+
+        return jdbcTemplate.queryForMap(sql, vehicleId);
+    }
+
+
     public Map<String, Object> getMonthlyExpenseSummary(LocalDate targetDate, int customerId) {
         String month = targetDate.format(DateTimeFormatter.ofPattern("yyyy-MM"));
 
@@ -33,8 +72,7 @@ public class CustomerExpenseService {
         AND DATE_TRUNC('month', fc.date) = DATE_TRUNC('month', ?::date)
     LEFT JOIN reports r ON DATE_TRUNC('month', r.generated_date) = DATE_TRUNC('month', ?::date)
         AND r.type = 'INSURANCE_COST'
-    WHERE v.ownership_type = 'LEASED'
-        AND v.company_id = ?
+    WHERE  v.company_id = ?
 """;
 
         Map<String, Object> result = jdbcTemplate.queryForMap(sql, targetDate, targetDate, targetDate, customerId);
@@ -90,8 +128,7 @@ public class CustomerExpenseService {
                 WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', ?::date)
                 GROUP BY vehicle_id
             ) fuel ON v.vehicle_id = fuel.vehicle_id
-            WHERE v.ownership_type = 'LEASED'
-                AND v.company_id = ?
+            WHERE  v.company_id = ?
             ORDER BY total_cost DESC
             """;
 

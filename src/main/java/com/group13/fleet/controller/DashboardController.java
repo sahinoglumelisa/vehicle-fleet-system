@@ -1,13 +1,7 @@
 package com.group13.fleet.controller;
 
-import com.group13.fleet.entity.Driver;
-import com.group13.fleet.entity.Vehicle;
-import com.group13.fleet.entity.VehicleStatus;
-import com.group13.fleet.entity.VehicleUsage;
-import com.group13.fleet.repository.CustomerRepository;
-import com.group13.fleet.repository.DriverRepository;
-import com.group13.fleet.repository.VehicleRepository;
-import com.group13.fleet.repository.VehicleUsageRepository;
+import com.group13.fleet.entity.*;
+import com.group13.fleet.repository.*;
 import com.group13.fleet.service.CustomerExpenseService;
 import com.group13.fleet.service.OutsourceExpenseService;
 import jakarta.servlet.http.HttpSession;
@@ -41,6 +35,8 @@ public class DashboardController {
     private CustomerRepository customerRepository;
     @Autowired
     private CustomerExpenseService customerExpenseService;
+    @Autowired
+    private FuelConsumptionRepository fuelConsumptionRepository;
 
     @GetMapping("/dashboard")
     public String showDashboard(Model model) {
@@ -128,27 +124,30 @@ public class DashboardController {
         }
 
         Optional<Vehicle> vehicle = vehicleRepository.findVehicleByDriver(driver.getUserId());
-        Optional<VehicleUsage> vehicleUsage = vehicleUsageRepository.findFirstOngoingOrUpcomingUsage(driver.getUserId());
+        //Optional<VehicleUsage> vehicleUsage = vehicleUsageRepository.findFirstOngoingOrUpcomingUsage(driverId);
 
+        List<VehicleUsage> usageList = vehicleUsageRepository.findLatestUsageByDriver(driverId);
+
+        VehicleUsage vehicleUsage = usageList.isEmpty() ? null : usageList.get(0);
         boolean hasVehicle = vehicle.isPresent();
-        boolean hasDuty = vehicleUsage.isPresent();
+        boolean hasDuty = vehicleUsage!=null;
         String purpose = "";
         LocalDate startDate = null;
         LocalDate endDate = null;
         long daysLeft = 0;
 
-        if (vehicleUsage.isPresent()) {
-            VehicleUsage usage = vehicleUsage.get();
-            purpose = usage.getPurpose();
-            startDate = usage.getStartDate();
-            endDate = usage.getEndDate();
+
+        if (vehicleUsage!=null) {
+            purpose = vehicleUsage.getPurpose();
+            startDate = vehicleUsage.getStartDate();
+            endDate = vehicleUsage.getEndDate();
 
             LocalDate today = LocalDate.now();
             if (!endDate.isBefore(today)) {
                 daysLeft = ChronoUnit.DAYS.between(today, endDate) + 1;
             }
+            System.out.println(vehicleUsage);
         }
-
         String companyName = customerRepository.findById(driver.getCompanyId()).get().getUsername().toUpperCase();
         model.addAttribute("companyName", companyName);
 
@@ -175,16 +174,18 @@ public class DashboardController {
         if (driverOpt.isEmpty()) {
             return "redirect:/login";
         }
-
         Driver driver = driverOpt.get();
         Optional<Vehicle> vehicle = vehicleRepository.findVehicleByDriver(driver.getUserId());
-        Optional<VehicleUsage> vehicleUsage = vehicleUsageRepository.findFirstOngoingOrUpcomingUsage(driver.getUserId());
+        List<VehicleUsage> usageList = vehicleUsageRepository.findLatestUsageByDriver(driverId);
 
         String companyName = customerRepository.findById(driver.getCompanyId()).get().getUsername().toUpperCase();
         model.addAttribute("companyName", companyName);
         model.addAttribute("hasVehicle", vehicle.isPresent());
         vehicle.ifPresent(v -> model.addAttribute("vehicle", v));
-        vehicleUsage.ifPresent(usage -> model.addAttribute("usage", usage));
+       // vehicleUsage.ifPresent(usage -> model.addAttribute("usage", usage));
+        if(!usageList.isEmpty()) {
+            model.addAttribute("usage", usageList.get(0));
+        }
 
         return "enter-km";
     }
@@ -192,17 +193,25 @@ public class DashboardController {
     @PostMapping("/driver/dashboard/submit-km")
     public String submitKm(@RequestParam("usageId") int usageId,
                            @RequestParam("endOdometer") double endOdometer,
-                           HttpSession session) {
+                           HttpSession session,
+                           Model model) {
 
         VehicleUsage usage = vehicleUsageRepository.findById(usageId)
                 .orElseThrow(() -> new RuntimeException("Usage not found"));
 
+        if (endOdometer <= usage.getStartOdometer()) {
+            model.addAttribute("usage", usage);
+            model.addAttribute("error", "End odometer must be greater than start odometer.");
+            return "enter-km";  // return to the same page
+        }
+
         usage.setEndOdometer(endOdometer);
-        usage.setVerified(false);  // Admin henüz onaylamadı
+        usage.setVerified(false);
         vehicleUsageRepository.save(usage);
 
         return "redirect:/driver/dashboard";
     }
+
 
     @GetMapping("/customer/dashboard")
     public String showCustomerDashboard(Model model, HttpSession session) {
@@ -332,6 +341,118 @@ public class DashboardController {
 
         return "company-monthly-summary";
     }
+
+    /*
+    @GetMapping("/customer/dashboard/report/vehicle-summary")
+    public String showMonthlySummary(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) Integer vehicleId,
+            Model model,
+            HttpSession session
+    ) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+
+        LocalDate now = LocalDate.now();
+        int finalYear = (year != null) ? year : now.getYear();
+        int finalMonth = now.getMonthValue();
+
+        LocalDate targetDate = LocalDate.of(finalYear, finalMonth, 1);
+        // Dropdown list of all leased vehicles for the company
+        List<Vehicle> vehicleList = vehicleRepository.findVehicleByCustomerAndOwnershipType(customerId, OwnershipType.OWNED);
+        model.addAttribute("vehicleList", vehicleList);
+
+        if (vehicleId != null) {
+            // Show stats for a specific vehicle
+            Map<String, Object> expenseData = customerExpenseService.getMonthlyVehicleStats(targetDate, vehicleId);
+            model.addAttribute("vehicleMode", true);
+            model.addAttribute("selectedVehicleId", vehicleId);
+            model.addAttribute("expenseData", expenseData);
+        } else {
+            // General stats for the company
+            Map<String, Object> expenseData = customerExpenseService.getMonthlyExpenseSummary(targetDate, customerId);
+            model.addAttribute("vehicleMode", false);
+            model.addAttribute("expenseData", expenseData);
+        }
+
+        List<Map<String, Object>> chartData = customerExpenseService.getExpenseChartData(targetDate, customerId);
+        List<Map<String, Object>> vehicleExpenses = customerExpenseService.getVehicleExpenseBreakdown(targetDate, customerId);
+
+        model.addAttribute("chartData", chartData);
+        model.addAttribute("vehicleExpenses", vehicleExpenses);
+        model.addAttribute("monthName", targetDate.format(DateTimeFormatter.ofPattern("MMM yyyy", new Locale("tr"))));
+        model.addAttribute("currentMonth", targetDate.toString());
+
+        return "customer-monthly-summary-for-vehicle";
+    }
+
+     */
+
+    @GetMapping("/customer/dashboard/report/vehicle-summary")
+    public String showVehicleExpenses(
+            @RequestParam(required = false) Integer vehicleId,
+            HttpSession session,
+            Model model
+    ) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+
+        List<Vehicle> vehicleList = vehicleRepository.findVehicleByCustomerAndOwnershipType(customerId,OwnershipType.OWNED);
+        model.addAttribute("vehicleList", vehicleList);
+
+        if (vehicleId != null) {
+            LocalDate now = LocalDate.now().withDayOfMonth(1); // current month
+            Map<String, Object> expenseData = customerExpenseService.getMonthlyVehicleStats(now, customerId,vehicleId);
+            Optional<Vehicle> vehicle = vehicleRepository.findById(vehicleId);
+            String plate = vehicle.get().getPlateNumber() + " - " + vehicle.get().getBrand() + " " + vehicle.get().getModel();
+
+            System.out.println(expenseData);
+            model.addAttribute("expenseData", expenseData);
+            model.addAttribute("selectedVehicleId", vehicleId);
+            model.addAttribute("selectedVehiclePlate", plate);
+            List<FuelConsumption> fuelConsumptions = fuelConsumptionRepository.findByVehicle(vehicleId);
+            model.addAttribute("fuelHistory", fuelConsumptions);
+
+        }
+
+
+
+
+        return "customer-monthly-summary-for-vehicle"; // your HTML file
+    }
+
+    @GetMapping("/customer/dashboard/report/vehicle-summary-leased")
+    public String showVehicleExpensesLeased(
+            @RequestParam(required = false) Integer vehicleId,
+            HttpSession session,
+            Model model
+    ) {
+        Integer customerId = (Integer) session.getAttribute("customerId");
+
+        List<Vehicle> vehicleList = vehicleRepository.findVehicleByCustomerAndOwnershipType(customerId,OwnershipType.LEASED);
+        model.addAttribute("vehicleList", vehicleList);
+
+        if (vehicleId != null) {
+            LocalDate now = LocalDate.now().withDayOfMonth(1); // current month
+            Map<String, Object> expenseData = customerExpenseService.getMonthlyVehicleStats(now, customerId,vehicleId);
+            Optional<Vehicle> vehicle = vehicleRepository.findById(vehicleId);
+            String plate = vehicle.get().getPlateNumber() + " - " + vehicle.get().getBrand() + " " + vehicle.get().getModel();
+
+            System.out.println(expenseData);
+            model.addAttribute("expenseData", expenseData);
+            model.addAttribute("selectedVehicleId", vehicleId);
+            model.addAttribute("selectedVehiclePlate", plate);
+            List<FuelConsumption> fuelConsumptions = fuelConsumptionRepository.findByVehicle(vehicleId);
+            model.addAttribute("fuelHistory", fuelConsumptions);
+
+        }
+
+
+
+
+        return "customer-monthly-summary-for-vehicle"; // your HTML file
+    }
+
+
 }
 
 

@@ -171,8 +171,10 @@
 
     <div class="mb-3">
       <label for="plateNumber" class="form-label">Plate Number</label>
-      <input type="text" class="form-control" id="plateNumber" name="plateNumber" required>
+      <input type="text" class="form-control" id="plateNumber" name="plateNumber" th:field="*{plateNumber}" required>
+      <div th:if="${plateError}" class="text-danger mt-1" th:text="${plateError}"></div>
     </div>
+
     <div class="mb-3">
       <label for="brand" class="form-label">Brand</label>
       <input type="text" class="form-control" id="brand" name="brand" required>

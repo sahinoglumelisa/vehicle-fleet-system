@@ -70,7 +70,7 @@ public class DriverController {
                 LocalDate.now(),
                 LocalDate.now().plusDays(30),
                 vehicle.getCurrentOdometer(),
-                null,
+                vehicle.getCurrentOdometer(),
                 purpose,   // 👈 Use the purpose value here
                 false
         );
@@ -81,13 +81,45 @@ public class DriverController {
     }
 
     @PostMapping("/driver/create")
-    public String createDriver(@RequestParam Integer customerId, @ModelAttribute Driver driver) {
-        driver.setUsername("driver_"+driver.getUsername());
+    public String createDriver(@RequestParam Integer customerId,
+                               @ModelAttribute("driver") Driver driver,
+                               Model model) {
+
+        String finalUsername = "driver_" + driver.getUsername();
+        boolean usernameExists = driverRepository.existsByUsername(finalUsername);
+        boolean emailExists = driverRepository.existsByEmail(driver.getEmail());
+        boolean licenseExists = driverRepository.existsByLicenseNumber(driver.getLicenseNumber());
+
+        boolean hasError = false;
+
+        if (usernameExists) {
+            model.addAttribute("usernameError", "This username is already taken.");
+            hasError = true;
+        }
+        if (emailExists) {
+            model.addAttribute("emailError", "This email is already in use.");
+            hasError = true;
+        }
+        if (licenseExists) {
+            model.addAttribute("licenseError", "This license number is already registered.");
+            hasError = true;
+        }
+
+        if (hasError) {
+            driver.setUsername(driver.getUsername()); // preserve unprefixed username
+            model.addAttribute("driver", driver);
+            model.addAttribute("customerId", customerId);
+            return "customer/new-driver"; // your Thymeleaf page
+        }
+
+        driver.setUsername(finalUsername);
         driver.setCompanyId(customerId);
         driver.setActive(Boolean.FALSE);
         driverRepository.save(driver);
 
         return "redirect:/customer/dashboard";
     }
+
+
 
 }

@@ -64,8 +64,17 @@ public class VehicleController {
     }
 
     @PostMapping("/vehicle/addOwned")
-    public String addOwnedVehicle(HttpSession session, @ModelAttribute("vehicle") Vehicle vehicle) {
+    public String addOwnedVehicle(HttpSession session,
+                                  @ModelAttribute("vehicle") Vehicle vehicle,
+                                  Model model) {
         Integer customerId = (Integer) session.getAttribute("customerId");
+
+        if (vehicleRepository.existsByPlateNumber(vehicle.getPlateNumber())) {
+            model.addAttribute("plateError", "There is already vehicle with that plate number.");
+            model.addAttribute("vehicle", vehicle);
+            model.addAttribute("customerId", customerId);
+            return "customer-owned-vehicle"; // bu HTML dosyanın tam Thymeleaf adı
+        }
 
         vehicle.setCustomer(customerId);
         vehicle.setStatus(VehicleStatus.AVAILABLE);
@@ -77,8 +86,8 @@ public class VehicleController {
         vehicleRepository.save(vehicle);
 
         return "redirect:/customer/dashboard";
-
     }
+
 
     @PostMapping("/vehicle/pool/{vehicleId}")
     public String assignVehicleJob(HttpSession session, RedirectAttributes redirectAttributes,@PathVariable("vehicleId") Integer vehicleId) {

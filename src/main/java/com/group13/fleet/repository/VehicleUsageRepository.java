@@ -16,8 +16,11 @@ public interface VehicleUsageRepository extends JpaRepository<VehicleUsage, Inte
     List<VehicleUsage> findAllByIsVerified(Boolean isVerified);
     Optional<VehicleUsage> findTopByDriverOrderByStartDateDesc(Integer driverId);
     Optional<VehicleUsage> findVehicleUsageByDriver(Integer DriverId);
-    @Query("SELECT v FROM VehicleUsage v WHERE v.driver = :driverId AND v.endDate >= CURRENT_DATE ORDER BY v.startDate ASC")
-    Optional<VehicleUsage> findFirstOngoingOrUpcomingUsage(@Param("driverId") Integer driverId);
+    @Query("SELECT v FROM VehicleUsage v WHERE v.driver = :driverId AND v.endDate >= CURRENT_DATE ORDER BY v.id DESC")
+    List<VehicleUsage> findOngoingOrUpcomingUsages(@Param("driverId") Integer driverId);
+
+    @Query("SELECT v FROM VehicleUsage v WHERE v.driver = :driverId ORDER BY v.startDate DESC, v.usageId DESC")
+    List<VehicleUsage> findLatestUsageByDriver(@Param("driverId") Integer driverId);
 
     Integer driver(Integer driver);
 }

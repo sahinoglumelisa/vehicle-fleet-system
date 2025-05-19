@@ -1,9 +1,6 @@
 package com.group13.fleet.repository;
 
-import com.group13.fleet.entity.Customer;
-import com.group13.fleet.entity.Driver;
-import com.group13.fleet.entity.Vehicle;
-import com.group13.fleet.entity.VehicleStatus;
+import com.group13.fleet.entity.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,6 +32,11 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
 
     @Query("SELECT DISTINCT v FROM Vehicle v WHERE v.customer = :customerId AND v.status IN (:available)")
     List<Vehicle> findByCustomerAndStatuses(Integer customerId, List<VehicleStatus> available);
+
+    List<Vehicle> findVehicleByCustomerAndOwnershipType(Integer customerId, OwnershipType ownershipType);
+
+    boolean existsByPlateNumber(String plateNumber);
+
 }
 
 
