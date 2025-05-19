@@ -177,19 +177,19 @@
 
     <div class="mb-3">
       <label for="brand" class="form-label">Brand</label>
-      <input type="text" class="form-control" id="brand" name="brand" required>
+      <input type="text" class="form-control" id="brand" name="brand" th:field="*{brand}" required>
     </div>
     <div class="mb-3">
       <label for="model" class="form-label">Model</label>
-      <input type="text" class="form-control" id="model" name="model" required>
+      <input type="text" class="form-control" id="model" name="model" th:field="*{model}" required>
     </div>
     <div class="mb-3">
       <label for="year" class="form-label">Year</label>
-      <input type="number" class="form-control" id="year" name="year" required>
+      <input type="number" class="form-control" id="year" name="year" th:field="*{year}" required>
     </div>
     <div class="mb-3">
       <label for="type" class="form-label">Car Type</label>
-      <select class="form-select" id="type" name="type" required>
+      <select class="form-select" id="type" name="type" th:field="*{type}" required>
         <option value="">Seçiniz</option>
         <option value="SEDAN">Sedan</option>
         <option value="VAN">Van</option>
@@ -199,7 +199,7 @@
     </div>
     <div class="mb-3">
       <label for="currentOdometer" class="form-label">Odometer</label>
-      <input type="number" step="0.1" class="form-control" id="currentOdometer" name="currentOdometer" required>
+      <input th:field="*{currentOdometer}" type="number" step="0.1" class="form-control" id="currentOdometer" name="currentOdometer" required>
     </div>
     <button type="submit" class="btn btn-primary w-100">Add Vehicle</button>
   </form>
