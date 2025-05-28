@@ -13,4 +13,3 @@ A monolith, full-stack Spring Boot web application that is written to manage a v
 - First, download IntelliJ and clone the git repo. Then open it in IntelliJ.
 - Open compose.yaml file and change POSTGRES_PASSWORD field to your pgAdmin4 password
 - Run the SQL.text file on your database
-- I suggest you clone burkay branch instead of master
