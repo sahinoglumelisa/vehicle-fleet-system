@@ -7,6 +7,7 @@ import com.group13.fleet.entity.VehicleUsage;
 import com.group13.fleet.repository.DriverRepository;
 import com.group13.fleet.repository.VehicleRepository;
 import com.group13.fleet.repository.VehicleUsageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,7 @@ public class DriverController {
     private final VehicleRepository vehicleRepository;
     private final VehicleUsageRepository vehicleUsageRepository;
 
+    @Autowired
     public DriverController(DriverRepository driverRepository, VehicleRepository vehicleRepository, VehicleUsageRepository vehicleUsageRepository) {
         this.driverRepository = driverRepository;
         this.vehicleRepository = vehicleRepository;
