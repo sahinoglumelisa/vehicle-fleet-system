@@ -15,10 +15,8 @@ import java.util.List;
 
 @Controller
 public class CompanyController {
-    @Autowired
     private final VehicleRepository vehicleRepository;
 
-    @Autowired
     private final CustomerRepository customerRepository;
 
     @Autowired
